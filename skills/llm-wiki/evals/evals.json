@@ -1,0 +1,44 @@
+{
+  "skill_name": "llm-wiki",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "以下の設定でLLM Wikiを操作してください。\n\n設定:\n- WIKI_ROOT: /tmp/llm-wiki-eval-1/wiki\n- SOURCES_DIR: /tmp/llm-wiki-eval-1/sources\n\n手順:\n1. /tmp/llm-wiki-eval-1/wiki ディレクトリを作成する\n2. /llm-wiki init rails を実行してrailsジャンルを初期化する\n3. /llm-wiki ingest /Users/aki/.claude/skills/llm-wiki/evals/files/rails-transaction.md を実行する\n\n作成したすべてのファイルをWIKI_ROOT配下に保存すること。",
+      "expected_output": "wiki/wiki/rails/ に index.md, _overview.md, log.md が作成され、トランザクションに関するページが生成される。ページはObsidianフロントマター、wikiリンク、タグを含む。ルートのindex.mdにrailsジャンルが追記される。",
+      "files": ["evals/files/rails-transaction.md"],
+      "expectations": [
+        "wiki/wiki/rails/ ディレクトリが作成されている",
+        "wiki/wiki/rails/index.md が存在し、トランザクションページが列挙されている",
+        "wiki/wiki/rails/_overview.md が存在する",
+        "wiki/wiki/rails/log.md が存在し、ingest操作が記録されている",
+        "railsジャンルのディレクトリにトランザクション関連のページ（例: active-record-transaction.md）が存在する",
+        "そのページにYAMLフロントマター（tags, sources, createdなどのフィールド）が含まれる",
+        "そのページに [[wikiリンク]] が1件以上含まれる"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "以下の設定でLLM Wikiを操作してください。\n\n設定:\n- WIKI_ROOT: /tmp/llm-wiki-eval-2/wiki\n- SOURCES_DIR: /tmp/llm-wiki-eval-2/sources\n\n手順:\n1. /tmp/llm-wiki-eval-2/wiki ディレクトリを作成する\n2. /llm-wiki init rails を実行\n3. /llm-wiki ingest /Users/aki/.claude/skills/llm-wiki/evals/files/rails-transaction.md を実行（1本目）\n4. /llm-wiki ingest /Users/aki/.claude/skills/llm-wiki/evals/files/rails-n-plus-1.md を実行（2本目）\n\nテストの焦点: 2本目取り込み後にindex.mdが正しく更新されること、トランザクションページとN+1ページが [[wikiリンク]] で接続されること。",
+      "expected_output": "2本目取り込み後、wiki/rails/index.md に両ページが列挙される。N+1ページからトランザクションページへ（またはその逆方向に）[[wikiリンク]]が存在する。log.md に2件の操作が記録される。",
+      "files": ["evals/files/rails-transaction.md", "evals/files/rails-n-plus-1.md"],
+      "expectations": [
+        "wiki/wiki/rails/index.md にトランザクション関連ページとN+1関連ページの両方が列挙されている",
+        "N+1問題に関するページが作成されている（例: n-plus-one.md, eager-loading.md）",
+        "トランザクションページとN+1ページの少なくとも一方に、他方へのwikiリンク [[...]] が含まれている",
+        "wiki/wiki/rails/log.md に2件の操作（2回のingest）が記録されている"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "以下の設定でLLM Wikiを操作してください。\n\n設定:\n- WIKI_ROOT: /tmp/llm-wiki-eval-3/wiki\n- SOURCES_DIR: /tmp/llm-wiki-eval-3/sources\n\n手順:\n1. /tmp/llm-wiki-eval-3/wiki ディレクトリを作成する\n2. /llm-wiki init rails を実行\n3. /llm-wiki ingest /Users/aki/.claude/skills/llm-wiki/evals/files/rails-transaction.md を実行\n4. /llm-wiki ingest /Users/aki/.claude/skills/llm-wiki/evals/files/rails-n-plus-1.md を実行\n5. /llm-wiki query Railsで大量データを効率的に扱うために知っておくべきことは何か？ を実行する\n\nテストの焦点: クエリへの回答がWikiページを [[ページ名]] 形式で引用し、複数ページの知識を統合していること。",
+      "expected_output": "クエリへの回答にeager loading（N+1対策）とトランザクションの両方に関する知識が統合されており、[[ページ名]]形式でWikiページが引用されている。",
+      "files": ["evals/files/rails-transaction.md", "evals/files/rails-n-plus-1.md"],
+      "expectations": [
+        "query-result.md が outputs/ に保存されている",
+        "query-result.md に [[ページ名]] 形式のwikiリンク引用が1件以上含まれている",
+        "query-result.md にeager loadingまたはN+1問題に関する内容が含まれている",
+        "query-result.md にトランザクションに関する内容が含まれている"
+      ]
+    }
+  ]
+}

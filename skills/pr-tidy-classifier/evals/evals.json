@@ -1,0 +1,48 @@
+{
+  "skill_name": "pr-tidy-classifier",
+  "evals": [
+    {
+      "id": 1,
+      "name": "rename-with-spec-updates",
+      "prompt": "次のPR diffを `/pr-tidy-classify 1234 --comment` で分類してください。なお `gh pr diff` 等の実行は不要で、下のdiffを直接対象としてください。SKILL.md / references/patterns.md / references/large-pr-sampling.md は事前に読んでから判定してください。diff:\n\n```diff\ndiff --git a/app/services/order_calculator.rb b/app/services/order_calculator.rb\nindex 1111..2222 100644\n--- a/app/services/order_calculator.rb\n+++ b/app/services/order_calculator.rb\n@@ -1,12 +1,12 @@\n class OrderCalculator\n-  def calc_total(items)\n+  def total_amount(items)\n     items.sum { |i| i.price * i.quantity }\n   end\n \n-  def calc_tax(items)\n-    calc_total(items) * 0.1\n+  def tax_amount(items)\n+    total_amount(items) * 0.1\n   end\n end\n\ndiff --git a/spec/services/order_calculator_spec.rb b/spec/services/order_calculator_spec.rb\nindex 3333..4444 100644\n--- a/spec/services/order_calculator_spec.rb\n+++ b/spec/services/order_calculator_spec.rb\n@@ -3,11 +3,11 @@ RSpec.describe OrderCalculator do\n   let(:items) { [double(price: 100, quantity: 2), double(price: 200, quantity: 1)] }\n \n   describe '#total' do\n-    it 'calculates total' do\n-      expect(calculator.calc_total(items)).to eq(400)\n+    it 'calculates total' do\n+      expect(calculator.total_amount(items)).to eq(400)\n     end\n   end\n \n   describe '#tax' do\n-    it 'calculates tax' do\n-      expect(calculator.calc_tax(items)).to eq(40.0)\n+    it 'calculates tax' do\n+      expect(calculator.tax_amount(items)).to eq(40.0)\n     end\n   end\n end\n\ndiff --git a/app/controllers/orders_controller.rb b/app/controllers/orders_controller.rb\nindex 5555..6666 100644\n--- a/app/controllers/orders_controller.rb\n+++ b/app/controllers/orders_controller.rb\n@@ -5,7 +5,7 @@ class OrdersController < ApplicationController\n   def show\n     @order = Order.find(params[:id])\n     @calculator = OrderCalculator.new\n-    @total = @calculator.calc_total(@order.items)\n-    @tax = @calculator.calc_tax(@order.items)\n+    @total = @calculator.total_amount(@order.items)\n+    @tax = @calculator.tax_amount(@order.items)\n   end\n end\n```\n\nPR タイトル: `refactor: rename calc_total/calc_tax to total_amount/tax_amount`\nPR 本文: メソッド名をより意味の明確な名前にリネームします。挙動の変更はありません。\n変更ファイル数: 3\n\n判定結果と、もし `--comment` フラグありとして処理するならどう gh コマンドを実行するかを説明してください。実際には gh コマンドは実行しないでください (環境にgh認証がない想定)。",
+      "expected_output": "T5 (リネーム) で `Approve可` と判定され、根拠として 3ファイルすべてが `calc_total → total_amount` / `calc_tax → tax_amount` の機械的リネームに収まることが説明される。`--comment` 指定時は `gh pr review 1234 --approve --body \"...\"` を実行する旨が示される。",
+      "files": [],
+      "expectations": [
+        "判定結果が `Approve可` である",
+        "T5 (リネーム) パターンが該当として明示されている",
+        "spec ファイルの変更が T5 の波及 (機械的更新) として説明され、NG5 (テスト追加) と誤認していない",
+        "`--comment` フラグありの場合 `gh pr review 1234 --approve` を実行する旨が示されている",
+        "報告がSKILL.mdに定義されたフォーマット (## PR分類結果, 該当パターン, 根拠 のセクション構成) に沿っている"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "new-business-logic",
+      "prompt": "次のPR diffを `/pr-tidy-classify 5678` で分類してください。なお `gh pr diff` 等の実行は不要で、下のdiffを直接対象としてください。SKILL.md / references/patterns.md / references/large-pr-sampling.md は事前に読んでから判定してください。diff:\n\n```diff\ndiff --git a/app/models/user.rb b/app/models/user.rb\nindex aaaa..bbbb 100644\n--- a/app/models/user.rb\n+++ b/app/models/user.rb\n@@ -10,6 +10,14 @@ class User < ApplicationRecord\n     name.split(' ').first\n   end\n \n+  def can_access_premium_features?\n+    return false unless active?\n+    return true if subscription&.premium?\n+    return true if trial_ends_at.present? && trial_ends_at > Time.current\n+\n+    false\n+  end\n+\n   def display_name\n     nickname.presence || name\n   end\n\ndiff --git a/app/controllers/premium_controller.rb b/app/controllers/premium_controller.rb\nindex cccc..dddd 100644\n--- a/app/controllers/premium_controller.rb\n+++ b/app/controllers/premium_controller.rb\n@@ -1,5 +1,11 @@\n class PremiumController < ApplicationController\n+  before_action :check_premium_access\n+\n   def index\n     @features = PremiumFeature.all\n   end\n+\n+  private\n+\n+  def check_premium_access\n+    redirect_to root_path unless current_user.can_access_premium_features?\n+  end\n end\n```\n\nPR タイトル: `feat: add premium feature access control`\nPR 本文: プレミアム機能へのアクセス制御を追加します。アクティブユーザーかつサブスクリプション加入またはトライアル中のユーザーのみがアクセス可能になります。\n変更ファイル数: 2\n\n判定結果を説明してください。",
+      "expected_output": "NG1 (新条件分岐) と NG2 (新規ビジネスロジック) に該当するため `NeedsReview` と判定される。新規メソッド `can_access_premium_features?` の中の複数の条件分岐、および `before_action` での認可ロジック追加が根拠として挙げられる。`--comment` フラグなしのため GitHub への投稿は行わない旨が示される。",
+      "files": [],
+      "expectations": [
+        "判定結果が `NeedsReview` である",
+        "NG1 (新条件分岐) または NG2 (新規ビジネスロジック) のいずれかが該当パターンとして明示されている",
+        "`can_access_premium_features?` メソッドが新規ロジックとして根拠に挙げられている",
+        "`--comment` フラグなしのため GitHub への投稿はしない旨が示されている、または投稿コマンドが実行/提案されていない",
+        "報告がSKILL.mdに定義されたフォーマットに沿っている"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "large-codegen-result",
+      "prompt": "次のPR diffを `/pr-tidy-classify 9999` で分類してください。なお `gh pr diff` 等の実行は不要で、下のdiffを直接対象としてください。SKILL.md / references/patterns.md / references/large-pr-sampling.md は事前に読んでから判定してください。\n\nPR タイトル: `chore: update generated GraphQL types after schema sync`\nPR 本文: `pnpm graphql-codegen` の実行結果を反映するPRです。スキーマファイルそのものは外部APIチームが管理しており、生成物のみを更新しています。\n変更ファイル数: 47\n\n変更ファイル一覧 (抜粋):\n```\nsrc/generated/graphql.ts\nsrc/generated/operations/getUser.generated.ts\nsrc/generated/operations/listOrders.generated.ts\nsrc/generated/operations/getProduct.generated.ts\n... (他 42 ファイルの src/generated/operations/*.generated.ts)\nsrc/api/queries/getUser.ts\n```\n\nサンプリング対象として確認した代表的なdiff:\n\n`src/generated/graphql.ts` の冒頭:\n```diff\n--- a/src/generated/graphql.ts\n+++ b/src/generated/graphql.ts\n@@ -1,4 +1,4 @@\n-/* This file is auto-generated. Do not edit. */\n+/* This file is auto-generated. Do not edit. */\n export type Maybe<T> = T | null;\n@@ -120,6 +120,9 @@ export type User = {\n   id: Scalars['ID'];\n   name: Scalars['String'];\n+  email: Scalars['String'];\n+  createdAt: Scalars['String'];\n   posts: Array<Post>;\n };\n```\n\n`src/generated/operations/getUser.generated.ts`:\n```diff\n--- a/src/generated/operations/getUser.generated.ts\n+++ b/src/generated/operations/getUser.generated.ts\n@@ -3,6 +3,8 @@ export type GetUserQuery = {\n   user: {\n     id: string;\n     name: string;\n+    email: string;\n+    createdAt: string;\n     posts: Array<{ id: string; title: string }>;\n   };\n };\n```\n\n`src/api/queries/getUser.ts` (波及先サンプル):\n```diff\n--- a/src/api/queries/getUser.ts\n+++ b/src/api/queries/getUser.ts\n@@ -3,6 +3,8 @@ export const GET_USER = gql`\n   query GetUser($id: ID!) {\n     user(id: $id) {\n       id\n       name\n+      email\n+      createdAt\n       posts {\n         id\n         title\n       }\n     }\n   }\n `;\n```\n\n判定結果を説明してください。",
+      "expected_output": "T9 (GraphQL codegen 実行結果) として `Approve可` と判定される。31ファイル超のためサンプリング判定で、`src/generated/graphql.ts`、`src/generated/operations/getUser.generated.ts`、波及先の `src/api/queries/getUser.ts` をペアで確認したことが報告に明示される。",
+      "files": [],
+      "expectations": [
+        "判定結果が `Approve可` である",
+        "T9 (GraphQL codegen 実行結果) パターンが該当として明示されている",
+        "サンプリング判定であることが報告に明記されている",
+        "確認した代表ファイル名 (波及元 + 波及先) が報告に列挙されている",
+        "波及先 (`src/api/queries/getUser.ts`) を NG1/NG2 と誤認していない (生成元のクエリ追加と整合する波及である旨が説明されている)",
+        "報告がSKILL.mdに定義されたフォーマットに沿っている"
+      ]
+    }
+  ]
+}
