@@ -1,0 +1,146 @@
+{
+  "project": {
+    "name": "2×4 オープンラック",
+    "description": "ガレージ・物置用の頑丈な4段オープンラック。重量物対応",
+    "designer": "user",
+    "created": "2026-05-13",
+    "unit": "mm"
+  },
+  "overall": {
+    "width": 900,
+    "depth": 400,
+    "height": 1800
+  },
+  "materials": [
+    {
+      "id": "SPF_2x4",
+      "type": "lumber",
+      "profile": "2x4",
+      "actual": [38, 89],
+      "stock_length": 1820,
+      "price_per_stock": 498,
+      "grain": "longitudinal"
+    },
+    {
+      "id": "plywood_15",
+      "type": "sheet",
+      "thickness": 15,
+      "stock_size": [910, 1820],
+      "price_per_stock": 3280
+    }
+  ],
+  "parts": [
+    {
+      "id": "post_FL",
+      "name": "前左柱",
+      "material_id": "SPF_2x4",
+      "dimensions": [38, 89, 1800],
+      "position": [0, 0, 0],
+      "quantity": 1,
+      "grain_axis": "z"
+    },
+    {
+      "id": "post_FR",
+      "name": "前右柱",
+      "material_id": "SPF_2x4",
+      "dimensions": [38, 89, 1800],
+      "position": [862, 0, 0],
+      "quantity": 1,
+      "grain_axis": "z"
+    },
+    {
+      "id": "post_BL",
+      "name": "後左柱",
+      "material_id": "SPF_2x4",
+      "dimensions": [38, 89, 1800],
+      "position": [0, 311, 0],
+      "quantity": 1,
+      "grain_axis": "z"
+    },
+    {
+      "id": "post_BR",
+      "name": "後右柱",
+      "material_id": "SPF_2x4",
+      "dimensions": [38, 89, 1800],
+      "position": [862, 311, 0],
+      "quantity": 1,
+      "grain_axis": "z"
+    },
+    {
+      "id": "rail_front",
+      "name": "前側横木",
+      "material_id": "SPF_2x4",
+      "dimensions": [824, 38, 89],
+      "position": [[38, 0, 100], [38, 0, 550], [38, 0, 1100], [38, 0, 1650]],
+      "quantity": 4,
+      "grain_axis": "x",
+      "notes": "4段分。各段の高さは100, 550, 1100, 1650mm"
+    },
+    {
+      "id": "rail_back",
+      "name": "後側横木",
+      "material_id": "SPF_2x4",
+      "dimensions": [824, 38, 89],
+      "position": [[38, 362, 100], [38, 362, 550], [38, 362, 1100], [38, 362, 1650]],
+      "quantity": 4,
+      "grain_axis": "x"
+    },
+    {
+      "id": "shelf_panel",
+      "name": "棚板",
+      "material_id": "plywood_15",
+      "dimensions": [824, 400, 15],
+      "position": [[38, 0, 189], [38, 0, 639], [38, 0, 1189], [38, 0, 1739]],
+      "quantity": 4,
+      "grain_axis": "x",
+      "notes": "910×1820サブロクから4枚取る。柱の間に収まる824mm幅。前後の横木の上に乗る"
+    }
+  ],
+  "joinery": {
+    "method": "screw_and_glue",
+    "screws": {
+      "type": "coarse_thread",
+      "length": 75,
+      "diameter": 3.8
+    },
+    "adhesive": "wood_glue"
+  },
+  "finish": {
+    "primary": "none",
+    "coats": 0
+  },
+  "assembly_steps": [
+    {
+      "step": 1,
+      "title": "柱と前後横木を接合（フレーム作成）",
+      "parts": ["post_FL", "post_FR", "rail_front"],
+      "action": "前柱2本に前横木4本をコーススレッドで固定。下穴必須。",
+      "tools": ["インパクトドライバー", "下穴ドリル", "コーススレッド75mm"],
+      "duration_min": 40
+    },
+    {
+      "step": 2,
+      "title": "後フレームを同様に作成",
+      "parts": ["post_BL", "post_BR", "rail_back"],
+      "action": "後柱2本に後横木4本を取り付け。前と対称になるように。",
+      "tools": ["インパクトドライバー", "コーススレッド75mm"],
+      "duration_min": 40
+    },
+    {
+      "step": 3,
+      "title": "前後フレームを連結",
+      "parts": [],
+      "action": "棚板を仮置きしながら前後フレームを起こし、棚板で連結する。",
+      "tools": ["コーススレッド75mm", "クランプ"],
+      "duration_min": 30
+    },
+    {
+      "step": 4,
+      "title": "棚板をビス止め",
+      "parts": ["shelf_panel"],
+      "action": "各棚板を横木の上に乗せ、上から下穴を開けてビス止め。",
+      "tools": ["インパクトドライバー", "コーススレッド45mm"],
+      "duration_min": 30
+    }
+  ]
+}

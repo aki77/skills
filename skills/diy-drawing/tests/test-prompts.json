@@ -1,0 +1,65 @@
+{
+  "description": "Test prompts for the diy-drawing skill. Each test has a user prompt and a rubric of what the skill should do.",
+  "tests": [
+    {
+      "id": "T1_simple_shelf",
+      "prompt": "リビング用に3段のオープン棚を作りたい。幅60cm、奥行20cm、高さ90cmくらいで、SPF材で作りたい。",
+      "rubric": [
+        "should use spec-template-shelf.json as a starting point",
+        "should set overall width=600, depth ~184 (single 1×8) or 235 (1×10), height=900",
+        "should generate spec.json that validates with 0 errors",
+        "should output plan.pdf with all 5 sections",
+        "BOM should show 2-3 boards of SPF 1×8 or 1×10",
+        "estimated cost should be in ¥2000-5000 range"
+      ],
+      "category": "basic"
+    },
+    {
+      "id": "T2_modification",
+      "prompt": "(T1完了後) 棚を3段から4段に増やしてほしい。高さは変えずに段を等間隔で。",
+      "rubric": [
+        "should edit existing spec.json — NOT regenerate from scratch",
+        "should add one more shelf part with appropriate position",
+        "should recalculate shelf positions (4 shelves in 900mm height = ~280mm spacing)",
+        "validator should still pass",
+        "BOM should reflect 1 additional shelf piece (still fits in same number of boards)"
+      ],
+      "category": "iteration"
+    },
+    {
+      "id": "T3_dangerous_design",
+      "prompt": "壁面いっぱいに本棚を作りたい。幅3m、奥行15cm、高さ2.5m、棚板は1×4で。",
+      "rubric": [
+        "validator MUST flag at least 2 issues:",
+        "  - parts > 1820mm need longer stock (or warn user)",
+        "  - tipping risk (height 2500mm, depth 150mm = ratio 16.7 >> 2.5)",
+        "  - SPF 1×4 shelf with 3000mm unsupported span >> 600mm safe limit",
+        "skill should explain risks to user before generating renders",
+        "should suggest mitigations (wall anchoring, intermediate supports, thicker material)"
+      ],
+      "category": "safety"
+    },
+    {
+      "id": "T4_2x4_rack",
+      "prompt": "ガレージに置く頑丈な棚を作りたい。2×4でガッチリ作って、棚板4段。だいたい幅90cm、奥40cm、高さ180cm。",
+      "rubric": [
+        "should use spec-template-rack.json as starting point",
+        "should validate (overall H/D ratio 4.5 will trigger tipping warning, which is expected)",
+        "BOM should show 2×4 lumber + plywood shelf panels",
+        "PDF should display 4 shelves correctly in 3D preview",
+        "cost estimate should be ¥6000-12000"
+      ],
+      "category": "variant"
+    },
+    {
+      "id": "T5_vague_input",
+      "prompt": "なんか棚作りたい。",
+      "rubric": [
+        "should ask at most 3 clarifying questions in a single batch (sizes, material, location/use)",
+        "should provide defaults so user can say 'それで進めて'",
+        "should NOT immediately generate a spec without any input"
+      ],
+      "category": "interaction"
+    }
+  ]
+}

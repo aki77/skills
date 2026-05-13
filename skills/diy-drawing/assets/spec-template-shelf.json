@@ -1,0 +1,136 @@
+{
+  "project": {
+    "name": "3段オープン棚",
+    "description": "リビング用の3段オープンシェルフ。SPF 1×8で作る基本形（単一板使用、貼り合わせなし）",
+    "designer": "user",
+    "created": "2026-05-13",
+    "unit": "mm"
+  },
+  "overall": {
+    "width": 600,
+    "depth": 184,
+    "height": 900
+  },
+  "materials": [
+    {
+      "id": "SPF_1x8",
+      "type": "lumber",
+      "profile": "1x8",
+      "actual": [19, 184],
+      "stock_length": 1820,
+      "price_per_stock": 1180,
+      "grain": "longitudinal"
+    }
+  ],
+  "parts": [
+    {
+      "id": "side_L",
+      "name": "左側板",
+      "material_id": "SPF_1x8",
+      "dimensions": [19, 184, 900],
+      "position": [0, 0, 0],
+      "quantity": 1,
+      "grain_axis": "z"
+    },
+    {
+      "id": "side_R",
+      "name": "右側板",
+      "material_id": "SPF_1x8",
+      "dimensions": [19, 184, 900],
+      "position": [581, 0, 0],
+      "quantity": 1,
+      "grain_axis": "z"
+    },
+    {
+      "id": "shelf_top",
+      "name": "天板",
+      "material_id": "SPF_1x8",
+      "dimensions": [562, 184, 19],
+      "position": [19, 0, 881],
+      "quantity": 1,
+      "grain_axis": "x"
+    },
+    {
+      "id": "shelf_mid",
+      "name": "中段棚板",
+      "material_id": "SPF_1x8",
+      "dimensions": [562, 184, 19],
+      "position": [19, 0, 450],
+      "quantity": 1,
+      "grain_axis": "x"
+    },
+    {
+      "id": "shelf_bot",
+      "name": "底板",
+      "material_id": "SPF_1x8",
+      "dimensions": [562, 184, 19],
+      "position": [19, 0, 0],
+      "quantity": 1,
+      "grain_axis": "x"
+    }
+  ],
+  "joinery": {
+    "method": "dowel_and_glue",
+    "dowel": {
+      "diameter": 8,
+      "length": 30,
+      "spacing": 80
+    },
+    "adhesive": "wood_glue"
+  },
+  "finish": {
+    "primary": "watco_oil_natural",
+    "coats": 2,
+    "sanding": ["120", "240"]
+  },
+  "assembly_steps": [
+    {
+      "step": 1,
+      "title": "全パーツのサンディング",
+      "parts": ["side_L", "side_R", "shelf_top", "shelf_mid", "shelf_bot"],
+      "action": "120番→240番の順に全パーツを研磨。木口は特に丁寧に。",
+      "tools": ["サンドペーパー", "サンディングブロック"],
+      "duration_min": 60
+    },
+    {
+      "step": 2,
+      "title": "ダボ穴あけ",
+      "parts": ["side_L", "side_R", "shelf_top", "shelf_mid", "shelf_bot"],
+      "action": "側板と棚板の接合面にφ8mmダボ穴を15mm深さで開ける。ダボマーカーを使うと位置がズレない。",
+      "tools": ["電動ドリル", "φ8mmドリルビット", "ダボマーカー", "ストッパー"],
+      "duration_min": 45
+    },
+    {
+      "step": 3,
+      "title": "底板と側板を接合",
+      "parts": ["side_L", "side_R", "shelf_bot"],
+      "action": "ダボ穴にボンドを入れ、ダボを挿し、底板と両側板をコの字に組む。クランプで圧着。",
+      "tools": ["木工用ボンド", "ダボ", "クランプ", "ハンマー"],
+      "duration_min": 20
+    },
+    {
+      "step": 4,
+      "title": "中段と天板を取り付け",
+      "parts": ["shelf_mid", "shelf_top"],
+      "action": "コの字に組んだ枠に中段→天板の順でダボ接合。直角を確認しながら。",
+      "tools": ["木工用ボンド", "ダボ", "クランプ", "差し金"],
+      "duration_min": 20
+    },
+    {
+      "step": 5,
+      "title": "ボンド硬化待ち",
+      "parts": [],
+      "action": "クランプで固定したまま最低6時間（できれば一晩）放置。",
+      "tools": [],
+      "duration_min": 360
+    },
+    {
+      "step": 6,
+      "title": "仕上げ塗装",
+      "parts": ["side_L", "side_R", "shelf_top", "shelf_mid", "shelf_bot"],
+      "action": "ワトコオイル ナチュラルを刷毛で塗布→15分後ウエスで拭き取り→24時間乾燥→2回目塗布。",
+      "tools": ["刷毛", "ウエス", "ワトコオイル"],
+      "duration_min": 90
+    }
+  ]
+}

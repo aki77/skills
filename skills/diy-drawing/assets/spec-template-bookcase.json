@@ -1,0 +1,189 @@
+{
+  "project": {
+    "name": "壁面本棚",
+    "description": "リビング壁面の文庫・単行本収納本棚。背板付き、5段、中央仕切り入り",
+    "designer": "user",
+    "created": "2026-05-13",
+    "unit": "mm"
+  },
+  "overall": {
+    "width": 800,
+    "depth": 200,
+    "height": 1500
+  },
+  "materials": [
+    {
+      "id": "SPF_1x8",
+      "type": "lumber",
+      "profile": "1x8",
+      "actual": [19, 184],
+      "stock_length": 1820,
+      "price_per_stock": 1180,
+      "grain": "longitudinal"
+    },
+    {
+      "id": "plywood_5",
+      "type": "sheet",
+      "thickness": 5.5,
+      "stock_size": [910, 1820],
+      "price_per_stock": 1480
+    }
+  ],
+  "parts": [
+    {
+      "id": "side_L",
+      "name": "左側板",
+      "material_id": "SPF_1x8",
+      "dimensions": [19, 184, 1500],
+      "position": [0, 0, 0],
+      "quantity": 1,
+      "grain_axis": "z"
+    },
+    {
+      "id": "side_R",
+      "name": "右側板",
+      "material_id": "SPF_1x8",
+      "dimensions": [19, 184, 1500],
+      "position": [781, 0, 0],
+      "quantity": 1,
+      "grain_axis": "z"
+    },
+    {
+      "id": "divider",
+      "name": "中央仕切り",
+      "material_id": "SPF_1x8",
+      "dimensions": [19, 184, 1462],
+      "position": [390, 0, 19],
+      "quantity": 1,
+      "grain_axis": "z",
+      "notes": "天板・底板に挟まれるので高さは少し短い"
+    },
+    {
+      "id": "shelf_top",
+      "name": "天板",
+      "material_id": "SPF_1x8",
+      "dimensions": [762, 184, 19],
+      "position": [19, 0, 1481],
+      "quantity": 1,
+      "grain_axis": "x"
+    },
+    {
+      "id": "shelf_bot",
+      "name": "底板",
+      "material_id": "SPF_1x8",
+      "dimensions": [762, 184, 19],
+      "position": [19, 0, 0],
+      "quantity": 1,
+      "grain_axis": "x"
+    },
+    {
+      "id": "shelf_L",
+      "name": "左側棚板",
+      "material_id": "SPF_1x8",
+      "dimensions": [371, 184, 19],
+      "position": [19, 0, 300],
+      "quantity": 3,
+      "grain_axis": "x",
+      "notes": "左半分。高さ300/600/900mm位置に取り付け"
+    },
+    {
+      "id": "shelf_R",
+      "name": "右側棚板",
+      "material_id": "SPF_1x8",
+      "dimensions": [371, 184, 19],
+      "position": [410, 0, 300],
+      "quantity": 3,
+      "grain_axis": "x"
+    },
+    {
+      "id": "back_panel",
+      "name": "背板",
+      "material_id": "plywood_5",
+      "dimensions": [800, 1500, 5.5],
+      "position": [0, 184, 0],
+      "quantity": 1,
+      "notes": "歪み防止に必須。後ろから釘で固定"
+    }
+  ],
+  "joinery": {
+    "method": "dowel_and_glue",
+    "dowel": {
+      "diameter": 8,
+      "length": 30,
+      "spacing": 60
+    },
+    "adhesive": "wood_glue",
+    "back_panel_fasteners": "釘 32mm（背板用）"
+  },
+  "finish": {
+    "primary": "osmocolor_walnut",
+    "coats": 2,
+    "sanding": ["180", "240", "400"]
+  },
+  "assembly_steps": [
+    {
+      "step": 1,
+      "title": "サンディング",
+      "parts": ["side_L", "side_R", "divider", "shelf_top", "shelf_bot", "shelf_L", "shelf_R"],
+      "action": "全パーツを180→240→400番でサンディング。塗装前提なので400番まで丁寧に。",
+      "tools": ["サンドペーパー", "オービタルサンダー（あれば）"],
+      "duration_min": 120
+    },
+    {
+      "step": 2,
+      "title": "ダボ穴位置の墨付け",
+      "parts": ["side_L", "side_R", "divider"],
+      "action": "側板・仕切りに棚板取付位置を線引き。ダボ穴位置（板から30mmと深さ方向中央）を印付け。",
+      "tools": ["差し金", "鉛筆", "ダボマーカー"],
+      "duration_min": 30
+    },
+    {
+      "step": 3,
+      "title": "ダボ穴あけ",
+      "parts": ["side_L", "side_R", "divider", "shelf_top", "shelf_bot", "shelf_L", "shelf_R"],
+      "action": "全接合面にφ8mm×深さ15mmの穴あけ。深さストッパー必須。",
+      "tools": ["電動ドリル", "φ8mmドリルビット", "深さストッパー"],
+      "duration_min": 90
+    },
+    {
+      "step": 4,
+      "title": "左セクション組立",
+      "parts": ["side_L", "divider", "shelf_L", "shelf_bot", "shelf_top"],
+      "action": "左側板と仕切りの間に左棚板3枚＋上下を組み込む。底板から順に。クランプで圧着。",
+      "tools": ["木工用ボンド", "ダボ", "クランプ", "差し金"],
+      "duration_min": 60
+    },
+    {
+      "step": 5,
+      "title": "右セクション組立",
+      "parts": ["side_R", "shelf_R"],
+      "action": "右側板に右棚板3枚を取り付け、左セクションと接合。",
+      "tools": ["木工用ボンド", "ダボ", "クランプ"],
+      "duration_min": 45
+    },
+    {
+      "step": 6,
+      "title": "ボンド硬化",
+      "parts": [],
+      "action": "クランプ固定のまま一晩（最低6時間）放置。",
+      "tools": [],
+      "duration_min": 600
+    },
+    {
+      "step": 7,
+      "title": "背板取付",
+      "parts": ["back_panel"],
+      "action": "背板を本体裏に当て、四辺と中央仕切り部分に32mm釘を150mm間隔で打つ。歪みが解消される。",
+      "tools": ["金槌", "釘 32mm"],
+      "duration_min": 30
+    },
+    {
+      "step": 8,
+      "title": "仕上げ塗装",
+      "parts": [],
+      "action": "オスモカラー ウォルナットを薄塗り→12時間乾燥→2回目薄塗り。本体組立後の方が塗りやすい。",
+      "tools": ["コテバケ", "オスモカラー"],
+      "duration_min": 120
+    }
+  ]
+}
