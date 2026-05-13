@@ -4,6 +4,7 @@ description: |
   サブディレクトリに置かれた CLAUDE.md ファイルを `.claude/rules/` 配下のパス固有ルールファイルへ変換するスキル。
   「CLAUDE.md を rules に変換して」「サブディレクトリの CLAUDE.md を移行したい」「.claude/rules/ に変換して」「CLAUDE.md を rules 形式にして」などのフレーズで呼び出す。
   ルートの CLAUDE.md はそのまま残し、サブディレクトリ（spec/, config/, app/ など）の CLAUDE.md のみを対象とする。
+license: MIT
 ---
 
 # claude-md-to-rules
