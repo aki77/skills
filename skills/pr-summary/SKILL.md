@@ -3,6 +3,7 @@ name: pr-summary
 description: GitHubのPR URLを受け取り、予備知識のないレビュアー向けに日本語でサマリーを生成するスキル。「PRの概要をまとめて」「PRをレビュー向けに説明して」「PRのサマリーを作って」「PRを要約して」などのフレーズとGitHub PR URLがセットで使われた場合に必ず使用する。既存PRの内容把握・レビュー依頼・チームへの共有など、PRの中身を人に説明したいあらゆる場面で積極的に使うこと。
 license: MIT
 argument-hint: "[PR URL] [--update-body]"
+context: fork
 ---
 
 # PR サマリー生成

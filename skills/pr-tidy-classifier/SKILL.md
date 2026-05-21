@@ -4,6 +4,7 @@ description: GitHub PR を Tidy First? の T1〜T15 / NG1〜NG7 パターンに�
 disable-model-invocation: true
 allowed-tools: Bash(gh pr diff:*), Bash(gh pr view:*), Bash(gh pr review:*), Bash(gh pr comment:*), Bash(git diff:*), Bash(git log:*), Bash(git rev-parse:*), Bash(git remote:*), Read
 license: MIT
+context: fork
 ---
 
 # PR Tidy Classifier
