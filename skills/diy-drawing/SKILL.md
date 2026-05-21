@@ -1,6 +1,7 @@
 ---
 name: diy-drawing
 description: Generate DIY furniture and woodworking drawings — cut lists, dimension drawings, assembly step diagrams, 3D preview, and bill of materials — from natural language requests. Use this skill whenever the user wants to design a shelf, rack, bookcase, desk, box, or any wooden DIY project, asks for a 木取り図 / カット図 / 寸法図 / 組み立て図 / 材料リスト, mentions SPF / 1×4 / 2×4 / 合板 / サブロク, or asks how to build something out of wood — even if they don't explicitly say "make a drawing". The skill uses a spec.json single-source-of-truth approach with deterministic Python renderers, avoiding the LLM coordinate-math pitfalls of direct SVG generation.
+license: MIT
 ---
 
 # DIY 図面スキル

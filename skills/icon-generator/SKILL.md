@@ -1,6 +1,7 @@
 ---
 name: icon-generator
 description: Generate raster icon assets (PNG) from a single SVG source using the `resvg` CLI. Use whenever the user needs application icons, app/extension assets, favicons, or any multi-size PNG export from an SVG — for Chrome / browser extensions (16/48/128 px for manifest.json), PWA / web app manifests, macOS / Windows / Linux app bundles, favicons (16/32/180/192/512 px), README badges, or any "I need a PNG at size N" task. Trigger on phrases like "create icons", "generate icons", "app icon", "extension icon", "favicon", "アイコン画像を作って", "SVGからPNGを生成", or when a project's manifest references icon files that don't yet exist. Prefer this skill over hand-drawing in Canvas, using browser screenshots, or pulling in heavy Node tooling like `sharp` — it produces clean, deterministic, hash-stable output and leaves no build-time dependencies in the project.
+license: MIT
 ---
 
 # Icon Generator
