@@ -5,7 +5,8 @@
 // 使い方:
 //   node apply.js [--timestamp <epoch>] < manifest.json
 //
-// 入力(stdin): [{ relpath, action, cleanedContent }]
+// 入力(stdin): [{ relpath, targetBase, action, cleanedContent }]
+//   targetBase: "rules"（.claude/rules 相対）| "root"（プロジェクトルート相対）。必須。
 //   action: "write" | "skip"
 // 出力(stdout): { written: [], backedUp: [], skipped: [] }
 //
@@ -13,7 +14,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { targetRulesDir } = require('./lib');
+const { targetRulesDir, resolveProjectRoot, safeJoin } = require('./lib');
 
 function die(msg, code) {
   process.stderr.write(msg + '\n');
@@ -39,16 +40,7 @@ try {
 if (!Array.isArray(manifest)) die('Manifest must be a JSON array', 1);
 
 const tgtDir = targetRulesDir();
-
-// relpath が取り込み先ディレクトリの外を指していないか検証（パストラバーサル防止）
-function safeJoin(base, relpath) {
-  const dest = path.resolve(base, relpath);
-  const baseResolved = path.resolve(base);
-  if (dest !== baseResolved && !dest.startsWith(baseResolved + path.sep)) {
-    die('Refusing to write outside target rules dir: ' + relpath, 2);
-  }
-  return dest;
-}
+const rootDir = resolveProjectRoot();
 
 const written = [];
 const backedUp = [];
@@ -72,7 +64,17 @@ for (const item of manifest) {
     die('write action requires cleanedContent for ' + relpath, 1);
   }
 
-  const dest = safeJoin(tgtDir, relpath);
+  // 書き込み先の名前空間を targetBase で決める（必須）。
+  const targetBase = item.targetBase;
+  let base;
+  if (targetBase === 'rules') base = tgtDir;
+  else if (targetBase === 'root') base = rootDir;
+  else die('Each manifest entry needs targetBase "rules" or "root": ' + relpath, 1);
+
+  const dest = safeJoin(base, relpath);
+  if (dest === null) {
+    die('Refusing to write outside ' + targetBase + ' dir: ' + relpath, 2);
+  }
 
   // 既存ファイルはバックアップ
   if (fs.existsSync(dest)) {
@@ -84,7 +86,11 @@ for (const item of manifest) {
   // サブディレクトリ作成 + 書き込み
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   fs.writeFileSync(dest, item.cleanedContent, 'utf8');
-  written.push('./' + path.join('.claude', 'rules', relpath));
+  written.push(
+    targetBase === 'rules'
+      ? './' + path.join('.claude', 'rules', relpath)
+      : './' + relpath
+  );
 }
 
 process.stdout.write(JSON.stringify({ written, backedUp, skipped }, null, 2) + '\n');

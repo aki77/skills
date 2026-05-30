@@ -1,8 +1,9 @@
 'use strict';
-// 共有ヘルパー（外部依存ゼロ）。inventory.js / apply.js から require する。
+// 共有ヘルパー（外部依存ゼロ）。inventory.js / apply.js / resolve-refs.js から require する。
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 
 // 取り込み先プロジェクトルートを解決する。
@@ -117,9 +118,47 @@ function listMarkdownFiles(rootDir) {
   return out;
 }
 
+// frontmatter / 先頭見出し / ファイル名 の優先順でルール名を導出する。
+function deriveName(relpath, fmData, body) {
+  if (fmData.name) return fmData.name;
+  if (fmData.title) return fmData.title;
+  const heading = /^\s*#\s+(.+?)\s*$/m.exec(body);
+  if (heading) return heading[1].trim();
+  return path.basename(relpath, path.extname(relpath));
+}
+
+// abs が base 配下（または base 自身）かどうか。パストラバーサル判定の中核。
+function safeUnder(base, abs) {
+  const baseResolved = path.resolve(base);
+  const dest = path.resolve(abs);
+  return dest === baseResolved || dest.startsWith(baseResolved + path.sep);
+}
+
+// relpath を base に結合する。base 外を指す場合は null を返す（呼び出し側で拒否）。
+function safeJoin(base, relpath) {
+  const dest = path.resolve(base, relpath);
+  if (!safeUnder(base, dest)) return null;
+  return dest;
+}
+
+// マークダウンファイルを読み、共通メタ（bytes / sha256 / frontmatter / name）を組み立てる。
+// inventory.js と resolve-refs.js が同じ形のエントリを作るための単一実装。
+function readEntry(absPath, relpath) {
+  const content = fs.readFileSync(absPath, 'utf8');
+  const bytes = Buffer.byteLength(content, 'utf8');
+  const sha256 = crypto.createHash('sha256').update(content, 'utf8').digest('hex');
+  const { data, body } = parseFrontmatter(content);
+  const name = deriveName(relpath, data, body);
+  return { content, bytes, sha256, data, name };
+}
+
 module.exports = {
   resolveProjectRoot,
   targetRulesDir,
   parseFrontmatter,
   listMarkdownFiles,
+  deriveName,
+  safeUnder,
+  safeJoin,
+  readEntry,
 };
