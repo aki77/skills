@@ -19,7 +19,7 @@ context: fork
 上記の変更内容に基づいて:
 
 1. デフォルトブランチにいる場合は新しいブランチを作成する（ブランチ名は変更内容から直感的に付ける。例: `feat/add-login-page`、`fix/null-pointer-error`）
-2. 変更内容を要約したConventional Commits形式（`type: subject`）で1つのコミットを作成する
+2. 未コミットの変更がある場合は、変更内容を要約したConventional Commits形式（`type: subject`）で1つのコミットを作成する。未pushコミットのみで未コミット変更がない場合はこの手順をスキップする
 3. ブランチをoriginにプッシュする
-4. `gh pr create` を使用してプルリクエストを作成する。`--base` には上記 "PR base branch" の値を使う。これは記録済みの分岐元を尊重するため、デフォルトブランチとは限らない（stacked PR に対応するため）。PRタイトル・本文は "Commits to be included in this PR" と "Full diff against base branch" を参照して、全コミットの変更内容を漏れなくまとめる（箇条書き1〜3行程度）
-5. 複数のツールを1つのレスポンスで呼び出すことができます。上記すべてを1つのメッセージで実行してください。他のツールを使用したり、他のことをしたりしないでください。これらのツール呼び出し以外のテキストやメッセージを送信しないでください。
+4. `gh pr create` を使用してプルリクエストを作成する。`--base` には上記 "PR base branch" の値を使う。これは記録済みの分岐元を尊重するため、デフォルトブランチとは限らない（stacked PR に対応するため）。PRタイトルは "Commits to be included in this PR" の内容全体を要約したConventional Commits形式（`type: subject`）にする。PR本文は "Commits to be included in this PR" と "Full diff against base branch" を参照して、全コミットの変更内容を漏れなくまとめる（箇条書き1〜3行程度）
+5. **全ツールを1つのレスポンスで順番に実行してください。** 各ステップの要否を事前に判断した上で全コマンドを計画し、途中で確認や他のツール呼び出しをせずに実行します。これらのツール呼び出し以外のテキストやメッセージを送信しないでください。
