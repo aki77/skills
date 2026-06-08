@@ -15,3 +15,7 @@
 | [llm-wiki](skills/llm-wiki/) | 個人の知識をWiki・ナレッジベースとして永続的に蓄積・管理する |
 | [japan-finance-expert](skills/japan-finance-expert/) | 日本の個人金融制度（新NISA・iDeCo等）に関する質問に専門家として回答する |
 | [pr-tidy-classifier](skills/pr-tidy-classifier/) | GitHub PR を Tidy First? パターンで分類し、構造的リファクタリングかを判定する |
+| [claude-rules-import](skills/claude-rules-import/) | 別プロジェクトの `.claude/rules` から固有情報を取り除いて自プロジェクトに取り込む |
+| [commit](skills/commit/) | Git コミットを作成する |
+| [commit-push-pr](skills/commit-push-pr/) | コミット・プッシュして PR を作成する |
+| [trim-agent-doc](skills/trim-agent-doc/) | 指定した Markdown ドキュメントから AI エージェントに自明・冗長な記述を削って簡潔にする |
