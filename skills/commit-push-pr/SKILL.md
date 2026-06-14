@@ -3,7 +3,6 @@ name: commit-push-pr
 description: Commit, push, and open a PR
 license: MIT
 allowed-tools: Bash(git checkout -b:*), Bash(git add:*), Bash(git status:*), Bash(git branch:*), Bash(git config:*), Bash(git push:*), Bash(git commit:*), Bash(gh pr create:*), Bash(gh repo view:*), Skill(commit)
-context: fork
 ---
 ## Context
 
