@@ -6,12 +6,13 @@
 
 ```
 skills/
-  <skill-name>/
-    SKILL.md          # スキル本体（必須）
-    evals/
-      evals.json      # 評価テストケース（任意）
-      files/          # evalで参照するファイル（任意）
-    references/       # スキルが参照する補助資料（任意）
+  <category>/        # カテゴリ（git, github, claude, knowledge, ruby, misc など）
+    <skill-name>/
+      SKILL.md          # スキル本体（必須）
+      evals/
+        evals.json      # 評価テストケース（任意）
+        files/          # evalで参照するファイル（任意）
+      references/       # スキルが参照する補助資料（任意）
 ```
 
 ## スキル管理コマンド
