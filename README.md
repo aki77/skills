@@ -38,6 +38,7 @@
 | スキル名 | 説明 |
 |----------|------|
 | [ruby-rails-ci-matrix](skills/ruby/ruby-rails-ci-matrix/) | Ruby gem の CI でテストする Ruby・Rails のバージョンマトリクスを保守する |
+| [database-consistency-enable](skills/ruby/database-consistency-enable/) | database_consistency のチェッカーを1つずつ段階的に有効化し、違反を修正または理由付きで個別無効化する |
 
 ## misc
 
