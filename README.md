@@ -19,3 +19,4 @@
 | [commit](skills/commit/) | Git コミットを作成する |
 | [commit-push-pr](skills/commit-push-pr/) | コミット・プッシュして PR を作成する |
 | [trim-agent-doc](skills/trim-agent-doc/) | 指定した Markdown ドキュメントから AI エージェントに自明・冗長な記述を削って簡潔にする |
+| [ruby-rails-ci-matrix](skills/ruby-rails-ci-matrix/) | Ruby gem の CI でテストする Ruby・Rails のバージョンマトリクスを保守する |
