@@ -270,6 +270,39 @@ pp orphans.limit(20).pluck(:id)
 
 ## 違反対応の落とし穴
 
+### FK 追加・NOT NULL 化は既存の削除/更新経路を実行時に壊しうる（exit 0 では検出されない）
+
+最も見落としやすい落とし穴。`ForeignKeyChecker` への対応で FK を追加したり、
+`ColumnPresenceChecker` / `NullConstraintChecker` への対応で NOT NULL を強化したりすると、
+**スキーマとモデル定義の整合は取れる（＝ `database_consistency` は exit 0）のに、既存の削除/更新
+コードが新しい制約に違反して実行時に落ちる** ことがある。`database_consistency` は最終的な
+スキーマ整合しか見ず、ランタイムの制約違反は検出しないため、ここは別途検証しないと潰せない。
+
+**典型例（即時 FK と削除順序）:** `on_delete` 指定も `deferrable` 指定も無い FK は即時
+（NOT DEFERRABLE / RESTRICT・NO ACTION）制約になり、参照元を残したまま参照先を削除すると、
+同一トランザクション内でも逐行で `PG::ForeignKeyViolation`（`InvalidForeignKey`）になる。
+新しく張った FK が **特定状態のレコードからのみ** 張られる参照を指す場合（例: 「公開済み」の
+行だけがある version を参照する）、その状態を作らない通常の destroy では顕在化せず、本番や
+特定操作で初めて落ちる。
+
+**壊れ方と直し方（一般論。実際の修正はプロジェクトの規約に従う）:**
+
+- **子→親の削除順序が逆** —— 親を消してから子を消す経路（例: 親の `after_destroy` で子を一括
+  delete）だと、親 DELETE 時点で子が残り FK 違反になる。→ **子を先に消す**（`after_destroy` を
+  `before_destroy` に移す等）。
+- **`dependent: :delete_all` / 自前の `delete_all` はコールバックを通さない** —— 参照を外す処理を
+  コールバックに書いても呼ばれず素通りする。→ 関連を消す前に **参照を明示的に nil 化** してから
+  delete する（`update_all(fk_id: nil)` 等）。
+- **複数の `before_destroy` の実行順序が問題** —— `dependent: :destroy` も `before_destroy` として
+  登録されるため、「参照を外す処理」がそれより後に登録されると、先に子（version 等）が消されて
+  しまう。→ 参照を外すコールバックを `prepend: true` で登録し、**確実に先行** させる。これで
+  controller / 一括削除 / Mutation など複数の削除経路を 1 箇所でまとめてカバーできることが多い。
+
+**検証:** これは exit 0 では捕まらない。**違反を引き起こす特定状態（公開済み等）を作ってから
+destroy/更新を走らせるリグレッションテスト** でしか捕まえられない。SKILL.md ステップ5の
+「制約強化が既存の削除/更新経路を壊さないか検証する」手順に従い、RED/TDD で進める
+（修正前のコードでテストが実行時エラーになることを先に確認する）。
+
 ### NOT NULL な boolean 列に `presence: true` を付けない
 
 `ColumnPresenceChecker` / `NullConstraintChecker` が boolean 列を指摘したとき、反射的に
