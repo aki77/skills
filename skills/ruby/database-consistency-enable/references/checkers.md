@@ -227,6 +227,12 @@ User:
   uniqueness を伴わないもの）は、既存データで失敗しないので事前確認は不要。
   - WHY: 全 migration で確認スクリプトを書くと冗長になる。落ちうるのは「既存データの中身に
     依存して成否が変わるもの」だけなので、そこに限定する。
+- **ただし「行データ起因では落ちない」ことと「絶対に落ちない」ことは別。** 純粋な index 追加でも、
+  `schema.rb` には未記録だが **実 DB には既に同名 index が存在する**（スキーマドリフト）と、
+  `PG::DuplicateTable` で migration が落ちる。これは上表の行データ（重複・NULL・孤児）とは別軸の
+  失敗で、確認スクリプトでは防げない。対策は `add_index` に `if_not_exists: true` を付けて
+  migration を冪等にすること。詳細は[違反対応の落とし穴](#違反対応の落とし穴)の
+  「対応漏れ index の追加は `if_not_exists: true` で冪等にする」を参照。
 
 ## 確認スクリプトのひな型
 
@@ -269,6 +275,46 @@ pp orphans.limit(20).pluck(:id)
   プロジェクトに合わせる。
 
 ## 違反対応の落とし穴
+
+### 対応漏れ index の追加は `if_not_exists: true` で冪等にする
+
+`MissingIndexChecker` / `MissingIndexFindByChecker` / `MissingUniqueIndexChecker` への対応で
+素の `add_index` を書くと、**`schema.rb` には未記録だが実 DB には既に同名 index が存在する**
+（スキーマドリフト）環境で `PG::DuplicateTable: relation "..." already exists` で migration が
+落ちる。`git` 上は新規追加に見えても、staging や本番の実 DB には過去の経緯で既に index がある、
+というケースが起こりうる。
+
+`bundle exec database_consistency` の exit 0 は `schema.rb` とモデル定義の整合しか見ず、
+**実 DB との差（ドリフト）は検出しない**ため、この欠陥はローカルで気づけずデプロイ時の
+migration で初めて落ちる（他の落とし穴項と同じ構図）。
+
+**対策:** `add_index` に `if_not_exists: true` を付けて migration を冪等にする。既存環境では
+スキップ、未適用環境（本番未適用など）では作成され、どちらでも安全に通る。ロールバック時の
+`remove_index` でも安全。
+
+**Before（ドリフト環境で落ちる）:**
+
+```ruby
+def change
+  add_index :articles, :author_id
+end
+```
+
+**After（冪等。どの環境でも通る）:**
+
+```ruby
+def change
+  add_index :articles, :author_id, if_not_exists: true
+end
+```
+
+- **スコープ外:** 「なぜ `schema.rb` 未記録なのに実 DB に index が存在したか」というドリフトの
+  根本原因の追査は、このスキルでは扱わない。冪等化で migration のデプロイ失敗を防ぐところまでが
+  本スキルの責務。
+- **検証:** 純粋な index 追加なので往復検証（rollback→再 migrate）は不要だが、冪等性は
+  **「既に index がある状態で migrate を流して `PG::DuplicateTable` にならない」ことを実機で確認**
+  するとよい。`schema_migrations` から当該バージョンの行だけ削除し（index は残す）、再度
+  migrate を流すとドリフト環境を再現できる。
 
 ### FK 追加・NOT NULL 化は既存の削除/更新経路を実行時に壊しうる（exit 0 では検出されない）
 
