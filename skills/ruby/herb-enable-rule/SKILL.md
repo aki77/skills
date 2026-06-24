@@ -1,6 +1,6 @@
 ---
 name: herb-enable-rule
-description: herb-lint (.herb.yml で enabled: false のルール) を1つ有効化する手順。「herb のルールを有効化して」「herb-lint の <ルール名> を on にして」などと言われたら必ず使う。herb-lint 以外の linter には使わない。
+description: "herb-lint (.herb.yml で enabled: false のルール) を1つ有効化する手順。「herb のルールを有効化して」「herb-lint の <ルール名> を on にして」などと言われたら必ず使う。herb-lint 以外の linter には使わない。"
 license: MIT
 ---
 
