@@ -3,6 +3,7 @@ name: commit
 description: Create a git commit
 license: MIT
 allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*)
+model: sonnet
 ---
 
 ## コンテキスト

@@ -5,6 +5,7 @@ license: MIT
 argument-hint: "[PR URL] [--dry-run]"
 context: fork
 disable-model-invocation: true
+model: sonnet
 ---
 
 # PR サマリー生成
