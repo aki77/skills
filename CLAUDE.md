@@ -27,6 +27,8 @@ gh skill publish
 
 ## SKILL.md フロントマター
 
+公式ドキュメント: https://docs.anthropic.com/en/docs/claude-code/skills
+
 ```yaml
 ---
 name: <skill-name>          # 必須
@@ -37,6 +39,8 @@ allowed-tools: <ツールリスト> # 任意
 disable-model-invocation: true  # 任意（ツールのみ使用する場合）
 context: fork               # 任意（フォークされたサブエージェントで実行）
 agent: <エージェントタイプ>  # 任意（context: fork 時のエージェント指定）
+model: <モデルID>            # 任意（スキル実行中のみオーバーライド。次のプロンプトで元に戻る）
+effort: low|medium|high|xhigh|max  # 任意
 ---
 ```
 
