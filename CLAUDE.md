@@ -54,5 +54,6 @@ effort: low|medium|high|xhigh|max  # 任意
 
 - `gh skill publish --dry-run` で警告を確認してからパブリッシュする
 - `description` は1024バイト以内に収める（UTF-8換算で警告が出る。日本語1文字=3バイト。`python3 -c "print(len('...'.encode('utf-8')))"` で確認）
+- `description` の値に `:` や `#` などYAML特殊文字が含まれる場合はダブルクォートで囲む（例: `enabled: false` を含む場合など）
 - `license` フィールドは必ず記載する
 - `disable-model-invocation: true` はスキルを明示的な呼び出し（`/skill-name`）のみに制限する。自動トリガーを無効化したいスキルに使う
