@@ -40,6 +40,7 @@
 |----------|------|
 | [ruby-rails-ci-matrix](skills/ruby/ruby-rails-ci-matrix/) | Ruby gem の CI でテストする Ruby・Rails のバージョンマトリクスを保守する |
 | [database-consistency-enable](skills/ruby/database-consistency-enable/) | database_consistency のチェッカーを1つずつ段階的に有効化し、違反を修正または理由付きで個別無効化する |
+| [herb-enable-rule](skills/ruby/herb-enable-rule/) | herb-lint の無効化中ルールを1つ有効化する。違反抽出・自動修正の振り分け・exclude 設定・検証・コミットまで一連の流れを再現する |
 
 ## misc
 
