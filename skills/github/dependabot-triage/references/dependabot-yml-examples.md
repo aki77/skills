@@ -2,6 +2,8 @@
 
 `package-ecosystem` 単位の完全なブロック例。固有名は、広く通用する実例（`@types/node` 等）は具体名で、それ以外は placeholder（`<package-name>` `<org>/<repo>` `<vX.Y.Z>`）にしてある。流用時はそのまま雛形として使い、依存名を差し替える。
 
+> 実運用の一次情報: dependabot-core 自身の [`.github/dependabot.yml`](https://github.com/dependabot/dependabot-core/blob/main/.github/dependabot.yml)。`groups` / `ignore` / `cooldown` などの実際の使われ方を確認したいときに参照する。
+
 - [npm](#npm)
 - [bundler](#bundler)
 - [github-actions](#github-actions)
