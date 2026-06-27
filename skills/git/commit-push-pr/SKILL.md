@@ -2,7 +2,7 @@
 name: commit-push-pr
 description: Commit, push, and create or update a PR
 license: MIT
-allowed-tools: Bash(git checkout -b:*), Bash(git add:*), Bash(git status:*), Bash(git branch:*), Bash(git config:*), Bash(git push:*), Bash(git commit:*), Bash(git log:*), Bash(git diff:*), Bash(gh pr create:*), Bash(gh pr view:*), Bash(gh pr edit:*), Bash(gh repo view:*), Skill(commit)
+allowed-tools: Bash(git checkout -b:*), Bash(git add:*), Bash(git status:*), Bash(git branch:*), Bash(git config:*), Bash(git push:*), Bash(git commit:*), Bash(git log:*), Bash(git diff:*), Bash(gh pr create:*), Bash(gh pr list:*), Bash(gh pr edit:*), Bash(gh repo view:*), Skill(commit)
 model: sonnet
 ---
 ## Context
@@ -10,7 +10,7 @@ model: sonnet
 - Current git status: !`git status`
 - Current branch: !`git branch --show-current`
 - PR base branch: !`b=$(git branch --show-current); gh=$(git config branch."$b".github-pr-base-branch 2>/dev/null); gh=${gh##*#}; vsc=$(git config branch."$b".vscode-merge-base 2>/dev/null); vsc=${vsc#origin/}; base=${gh:-$vsc}; [ -n "$base" ] && echo "$base" || (gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null || git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||')`
-- 既存PR (current branch): !`gh pr view --json number,url,title,body --jq '"#\(.number) \(.url)\nTITLE: \(.title)\nBODY:\n\(.body)"' 2>/dev/null || echo "(なし — 新規作成する)"`
+- 既存PR (current branch): !`b=$(git branch --show-current); gh pr list --state open --head "$b" --json number,url,title,body --jq 'if length>0 then .[0] | "#\(.number) \(.url)\nTITLE: \(.title)\nBODY:\n\(.body)" else "(なし — 新規作成する)" end' 2>/dev/null || echo "(なし — 新規作成する)"`
 
 ## あなたのタスク
 
