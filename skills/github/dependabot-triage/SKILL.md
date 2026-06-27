@@ -80,6 +80,17 @@ npm / bundler それぞれの**完全な `dependabot.yml` ブロック例**（`g
 
 `groups`・`cooldown` を組み込んだ完全な設定例は [references/dependabot-yml-examples.md](references/dependabot-yml-examples.md) にある。
 
+## 予定外の曜日/時刻にPRが来る
+
+`schedule.day: monday`（や `time:`）を指定しているのに別の曜日にPRが来た、というケース。設定ミスを疑う前に、まず次の2点を押さえる。
+
+- **`schedule` は best effort** — 指定はジョブを「だいたいその頃に開始する」程度で、厳密な曜日/時刻は保証されない。バックプレッシャー次第で前後する。
+- **`dependabot.yml` を編集してpushすると即時再実行される（仕様）** — 設定変更はすぐ反映したいという想定で、Dependabot はスケジュールを待たずその場でジョブを走らせPRを作る。**現在スケジュール外で走る主因はこれ**（他はセキュリティアドバイザリ公開時・前回ジョブ失敗時の再実行）。
+
+したがって「予定外の曜日にPRが来た」ら、まず **直前に `dependabot.yml` を編集・pushしていないか**（直近コミットに `dependabot.yml` の変更が無いか）を疑う。あれば設定どおりの正常動作であり、対処不要。`schedule` を触らずに次回を待てば通常はスケジュール付近に戻る。
+
+> 出典: dependabot-core [#3059](https://github.com/dependabot/dependabot-core/issues/3059)（メンテナ回答）。スケジュール挙動は推測で断定せず、挙動に確信が持てなければ一次情報を確認する。なお `cooldown` は「リリース直後の版を避ける猶予期間」であってスケジュールの曜日/時刻とは無関係。混同しない。
+
 ## Dependabot PR で CI が権限不足（403）で失敗する
 
 依存更新そのものとは別軸の、Dependabot PR 特有のCI失敗。
