@@ -26,6 +26,7 @@
 | [claude-md-to-rules](skills/claude/claude-md-to-rules/) | サブディレクトリの CLAUDE.md を `.claude/rules/` 配下のパス固有ルールファイルへ変換する |
 | [claude-rules-import](skills/claude/claude-rules-import/) | 別プロジェクトの `.claude/rules` から固有情報を取り除いて自プロジェクトに取り込む |
 | [trim-agent-doc](skills/claude/trim-agent-doc/) | 指定した Markdown ドキュメントから AI エージェントに自明・冗長な記述を削って簡潔にする |
+| [code-review-guideline](skills/claude/code-review-guideline/) | 指定した観点でリポジトリ全体を並列レビューし、重要度別・根拠つきの結果を Markdown 出力する |
 
 ## knowledge
 
