@@ -57,3 +57,4 @@ effort: low|medium|high|xhigh|max  # 任意
 - `description` の値に `:` や `#` などYAML特殊文字が含まれる場合はダブルクォートで囲む（例: `enabled: false` を含む場合など）
 - `license` フィールドは必ず記載する
 - `disable-model-invocation: true` はスキルを明示的な呼び出し（`/skill-name`）のみに制限する。自動トリガーを無効化したいスキルに使う
+- 固有情報（プロジェクト名・社内サービス名など）を含めない原則は、スキル本文だけでなくコミットメッセージにも適用する
