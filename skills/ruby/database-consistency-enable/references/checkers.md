@@ -208,6 +208,15 @@ User:
 - `*` のワイルドカード（例: `Admin*`）や YAML のアンカー/エイリアスも使える。詳細は
   公式 wiki の configuration ページを参照。
 - 構文に迷ったら、当該バージョンの挙動を公式 wiki の configuration.md で最終確認すること。
+- **カラム単位のチェッカー（`NullConstraintChecker` / `ColumnPresenceChecker` /
+  `ValidatorChecker` 等）のキーは、常に DB カラムの物理名であり association 名ではない。**
+  例えば `belongs_to :contract`（外部キーカラムは `contract_id`）を無効化したいときのキーは
+  `contract_id` であって `contract` ではない。gem 内部の実装（`ColumnChecker#column_or_attribute_name`
+  が `column.name` を返す）がそうなっているため。association 名で書いても構文エラーにはならず、
+  **無効化が黙って効かない**（該当違反が消えないまま気づかない）という失敗をする。
+  設定を書いたら必ず `bundle exec database_consistency` を再実行し、対象の違反が実際に
+  出力から消えたことを確認すること（`AssociationChecker` など association 単位のチェッカーは
+  逆に association 名がキーになるので、チェッカーの種類ごとに確認が要る）。
 
 ## 本番データ依存チェッカー（migration 前にデータ確認が要るもの）
 
@@ -348,6 +357,36 @@ end
 destroy/更新を走らせるリグレッションテスト** でしか捕まえられない。SKILL.md ステップ5の
 「制約強化が既存の削除/更新経路を壊さないか検証する」手順に従い、RED/TDD で進める
 （修正前のコードでテストが実行時エラーになることを先に確認する）。
+
+### `before_save` / `before_create` でセットされる値に `presence: true` を足すと `valid?` 単体呼び出しを壊す
+
+`NullConstraintChecker` が「このカラムには presence バリデーションが無い」と指摘したとき、
+「作成経路を見るとこのカラムには必ず値が入るから安全」と判断して `presence: true` を追加しても、
+**そのカラムがいつ値をセットされるか（コールバックの種類）** を確認しないと壊れることがある。
+
+**安全なパターン（`new` した時点で値が入る）:**
+
+- `has_secure_token`: デフォルトの `on: :initialize`（Rails 7.1+）なら `after_initialize` で
+  セットされる。`Model.new` の時点で既に値が入っているため、`valid?` を単体で呼んでも安全。
+- `attribute :x, :type, default: -> { ... }`: Active Record の属性デフォルトも同様に
+  インスタンス生成時点で値が入る。
+
+**危険なパターン（`save` を実行するまで値が入らない）:**
+
+- `before_save` / `before_create` などの `before_` 系コールバックでカラムをセットしている場合
+  （例: `before_save :set_external_service_record_id`）、そのコールバックは **`save` が
+  呼ばれたときにしか実行されない**。`presence: true` を追加すると、`valid?` を単体で呼ぶ
+  既存コード・テスト（"バリデーションエラーが空であること" だけを save 前に確認するテストなど）
+  でカラムが未セットのままバリデーションされ、**新たにバリデーションエラーになって壊れる**。
+
+`database_consistency` はこの違いを区別しないため、`before_` 系コールバックでセットされる
+カラムは presence バリデーションを追加せず、理由コメント付きで個別無効化するのが安全。
+どちらのパターンか判断に迷ったら、`Model.new` を実行してその場でカラムに値が入っているか
+実機で確認するとよい（`before_` 系なら nil のまま）。
+
+**検証:** 追加した presence バリデーションが安全かどうかは `database_consistency` の exit 0
+では分からない。対象モデルの関連 spec（特に `valid?` を単体で呼ぶ validation スペック）を
+実行し、既存テストが壊れていないことを確認して初めて安全と言える。
 
 ### NOT NULL な boolean 列に `presence: true` を付けない
 
