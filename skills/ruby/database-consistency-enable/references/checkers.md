@@ -217,6 +217,12 @@ User:
   設定を書いたら必ず `bundle exec database_consistency` を再実行し、対象の違反が実際に
   出力から消えたことを確認すること（`AssociationChecker` など association 単位のチェッカーは
   逆に association 名がキーになるので、チェッカーの種類ごとに確認が要る）。
+- **`PrimaryKeyTypeChecker` も `ColumnChecker` 系（カラム単位）であり、モデル直下ではなく
+  `id:` キーの配下に置く必要がある。** `Model: { PrimaryKeyTypeChecker: { enabled: false } }`
+  という「モデルレベル無効化」の書き方は構文エラーにはならないが黙って効かず、違反が
+  消えない。正しくは `Model: { id: { PrimaryKeyTypeChecker: { enabled: false } } }`。
+  他のカラム単位チェッカーと同様、書いたら再実行して当該モデルの違反が消えたことを
+  必ず確認すること。
 
 ## 本番データ依存チェッカー（migration 前にデータ確認が要るもの）
 
