@@ -30,6 +30,7 @@
 | [code-review-guideline](skills/claude/code-review-guideline/) | 指定した観点でリポジトリ全体を並列レビューし、重要度別・根拠つきの結果を Markdown 出力する |
 | [migrate-rules-to-apm](skills/claude/migrate-rules-to-apm/) | APM未管理の `.claude/rules` ルールと CLAUDE.md を `.apm/instructions/` へ一括移行する |
 | [dedupe-apm-local-rules](skills/claude/dedupe-apm-local-rules/) | APMパッケージ由来ルールと重複するプロジェクト固有ローカルルールを検出し縮小・削除する |
+| [implement-plan](skills/claude/implement-plan/) | プランモードで作成したプランファイルの内容に沿って、軽量なsonnetモデルで実装フェーズを実行する |
 
 ## knowledge
 
