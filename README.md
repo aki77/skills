@@ -29,6 +29,7 @@
 | [trim-agent-doc](skills/claude/trim-agent-doc/) | 指定した Markdown ドキュメントから AI エージェントに自明・冗長な記述を削って簡潔にする |
 | [code-review-guideline](skills/claude/code-review-guideline/) | 指定した観点でリポジトリ全体を並列レビューし、重要度別・根拠つきの結果を Markdown 出力する |
 | [migrate-rules-to-apm](skills/claude/migrate-rules-to-apm/) | APM未管理の `.claude/rules` ルールと CLAUDE.md を `.apm/instructions/` へ一括移行する |
+| [dedupe-apm-local-rules](skills/claude/dedupe-apm-local-rules/) | APMパッケージ由来ルールと重複するプロジェクト固有ローカルルールを検出し縮小・削除する |
 
 ## knowledge
 
