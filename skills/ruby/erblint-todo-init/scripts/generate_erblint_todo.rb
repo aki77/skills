@@ -40,6 +40,21 @@ end
 
 generated_on = Date.today.iso8601
 
+# NOTE: 違反ゼロの種別は todo を書き出さない（かつ再生成時に古い todo が残らないよう既存を削除する）。
+# 空の todo（rubocop なら cop なし、独自リンターなら linters が空）は inherit_from で読ませても
+# 何も除外しない無意味なファイルで、これを生成すると「空 todo を参照する」余計な運用が残るため。
+def write_or_remove(path, has_entries, lines)
+  if has_entries
+    File.write(path, "#{lines.join("\n")}\n")
+    warn "Wrote #{path}"
+  elsif File.exist?(path)
+    File.delete(path)
+    warn "Removed #{path} (no offenses; existing todo deleted)"
+  else
+    warn "Skipped #{path} (no offenses)"
+  end
+end
+
 rubocop_todo = [
   '# erblint の Rubocop リンター用 todo（cop×ファイル単位の Exclude）。',
   '# .erb_lint.yml の Rubocop.rubocop_config.inherit_from から読まれる。',
@@ -50,7 +65,7 @@ by_cop.keys.sort.each do |cop|
   rubocop_todo << '  Exclude:'
   by_cop[cop].uniq.sort.each { |path| rubocop_todo << "    - #{path}" }
 end
-File.write('.erb-lint-rubocop-todo.yml', "#{rubocop_todo.join("\n")}\n")
+write_or_remove('.erb-lint-rubocop-todo.yml', by_cop.any?, rubocop_todo)
 
 erblint_todo = [
   '# bundle exec erblint app の既存違反をファイル単位で無効化した todo。',
@@ -62,6 +77,4 @@ by_linter.keys.sort.each do |linter|
   erblint_todo << '    exclude:'
   by_linter[linter].uniq.sort.each { |path| erblint_todo << "      - #{path}" }
 end
-File.write('.erb_lint_todo.yml', "#{erblint_todo.join("\n")}\n")
-
-warn "Wrote .erb-lint-rubocop-todo.yml (#{by_cop.size} cops) and .erb_lint_todo.yml (#{by_linter.size} linters)"
+write_or_remove('.erb_lint_todo.yml', by_linter.any?, erblint_todo)

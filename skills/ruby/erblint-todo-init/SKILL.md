@@ -76,30 +76,47 @@ bundle exec erblint app --format json \
 
 生成されるファイルの先頭コメントの生成日はスクリプト実行時の日付が自動で入る。
 
+**その種別の違反がゼロなら、対応する todo は生成されない**（空の todo は inherit_from で読ませても
+何も除外しない無意味なファイルになるため）。加えて、再生成時に既存の同名 todo が残っていて今回
+違反ゼロなら、その古い todo はスクリプトが削除する。スクリプトは各ファイルについて `Wrote` /
+`Removed` / `Skipped` のいずれかを stderr に出すので、**どちらが生成されたか（＝手順5で
+inherit_from に足すべきファイルはどれか）を必ずこの出力で確認する**。両種別ともゼロなら
+そもそも todo 運用は不要で、以降の手順もスキップしてよい。
+
 ### 4. 本体 `.erb_lint.yml` の既存 exclude を todo へ移設する
 
-**本体 `.erb_lint.yml` に同名リンターの既存 `exclude` があれば、そのエントリを todo 側
-（`.erb_lint_todo.yml` の該当リンターの `exclude`）に移設して統合する**（前提知識の deep_merge
-上書き対策。本体には残さない）。この判断はスクリプトでは自動化しない — 既存 exclude の有無・
-移設可否そのものが人間/エージェントの判断を要するため、手順3のスクリプト生成後に手動で行う。
+`.erb_lint_todo.yml` が**生成された場合のみ**この手順を行う（独自リンターの違反がゼロで生成
+されなかったなら移設先がないのでスキップ）。**本体 `.erb_lint.yml` に同名リンターの既存
+`exclude` があれば、そのエントリを todo 側（`.erb_lint_todo.yml` の該当リンターの `exclude`）に
+移設して統合する**（前提知識の deep_merge 上書き対策。本体には残さない）。この判断はスクリプトでは
+自動化しない — 既存 exclude の有無・移設可否そのものが人間/エージェントの判断を要するため、手順3の
+スクリプト生成後に手動で行う。
+
+なお、トップレベルの `exclude:`（`EnableDefaultLinters` に対するグローバル除外。kaminari テーマ等）は
+個別リンターの `exclude` ではないため deep_merge 上書きの対象外で、移設不要。本体に残してよい。
 
 ### 5. `.erb_lint.yml` 本体を編集する
 
-- トップレベル（`inherit_gem` の直後）に `inherit_from: [.erb_lint_todo.yml]` を追加する。
+**手順3で実際に生成された todo だけを inherit_from に足す**（生成されなかった空 todo を参照させると、
+存在しないファイルを inherit する、または無意味な参照が残る）。
+
+- `.erb_lint_todo.yml` が生成された場合のみ、トップレベル（`inherit_gem` の直後）に
+  `inherit_from: [.erb_lint_todo.yml]` を追加する。
 - 手順4で todo に移設した exclude は本体側から削除し、削除した理由を一言コメントで残す
   （例: `# NOTE: exclude は .erb_lint_todo.yml に集約する（本体に残すと inherit_from の
   deep_merge で todo 側の配列を上書きしてしまうため）`）。
-- `linters.Rubocop.rubocop_config.inherit_from` に `.erb-lint-rubocop-todo.yml` を追記する
-  （既存の `.rubocop.yml` と並べる）。
+- `.erb-lint-rubocop-todo.yml` が生成された場合のみ、`linters.Rubocop.rubocop_config.inherit_from`
+  に `.erb-lint-rubocop-todo.yml` を追記する（既存の `.rubocop.yml` と並べる）。
 
 ## 検証
 
 1. `bundle exec erblint app` が **No errors were found**（exit 0）になることを確認する。
-2. 回帰チェックを erb_lint 独自・rubocop 両方で1回ずつ行う: todo から1行だけ一時的に削除
-   → 該当違反が復活することを確認 → 元に戻す。deep_merge 集約と tempfile 経由の
-   inherit_from 解決が両方とも正しく機能していることの実証になる。
+2. 回帰チェックを、**生成された todo それぞれ**で1回ずつ行う: todo から1行だけ一時的に削除
+   → 該当違反が復活することを確認 → 元に戻す。deep_merge 集約（`.erb_lint_todo.yml`）と
+   tempfile 経由の inherit_from 解決（`.erb-lint-rubocop-todo.yml`）が正しく機能していることの
+   実証になる。生成されなかった種別は対象がないのでスキップ。
 3. `.rubocop.yml` が `.erb-lint-rubocop-todo.yml` を参照していないことを `grep` で確認する
-   （通常の `bin/rubocop` に非干渉であることの担保）。
+   （通常の `bin/rubocop` に非干渉であることの担保。rubocop todo が生成された場合のみ）。
 
 ## やってはいけないこと
 
@@ -108,6 +125,9 @@ bundle exec erblint app --format json \
 - rubocop todo（`.erb-lint-rubocop-todo.yml`）を `.rubocop.yml` から inherit させる
   （通常の rubocop 実行にまで Exclude が波及してしまう）。
 - todo を手書きで積み増す。必ず `--format json` の出力から機械生成し、件数を突き合わせて検証する。
+- 違反ゼロの種別に対して空の todo（`linters:` だけ、cop エントリなし）を生成して inherit_from に
+  足す。何も除外しない無意味な参照が残り、運用上のノイズになる。生成有無はスクリプトの stderr
+  （`Wrote` / `Skipped` / `Removed`）で判断する。
 - 対象を広げた glob（`**/`）で無効化する。同名ファイルへの誤爆を避けるため、必ずファイル単位の
   一意な相対パスで書く。
 
