@@ -19,6 +19,7 @@
 | [pr-tidy-classifier](skills/github/pr-tidy-classifier/) | GitHub PR を Tidy First? パターンで分類し、構造的リファクタリングかを判定する |
 | [dependabot-triage](skills/github/dependabot-triage/) | Dependabot のPR・設定を診断し、ノイズPRや不要な更新を抑える正しい対処を選ぶスキル |
 | [pr-review-comments-resolve](skills/github/pr-review-comments-resolve/) | GitHub PRのレビューコメントのうち、Hide・解決済みでないものだけを抽出して対応する |
+| [diagnose-ci-failure](skills/github/diagnose-ci-failure/) | GitHub Actions のCI失敗を、原因分類・ローカル再現・修正・検証まで体系的に進める |
 
 ## claude
 
