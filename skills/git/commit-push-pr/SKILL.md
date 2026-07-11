@@ -12,6 +12,7 @@ model: sonnet
 - PR base branch: !`b=$(git branch --show-current); gh=$(git config branch."$b".github-pr-base-branch 2>/dev/null); gh=${gh##*#}; vsc=$(git config branch."$b".vscode-merge-base 2>/dev/null); vsc=${vsc#origin/}; base=${gh:-$vsc}; [ -n "$base" ] && echo "$base" || (gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null || git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||')`
 - 既にコミット済みでこのPRに入るコミット集合 (base..HEAD): !`b=$(git branch --show-current); gh=$(git config branch."$b".github-pr-base-branch 2>/dev/null); gh=${gh##*#}; vsc=$(git config branch."$b".vscode-merge-base 2>/dev/null); vsc=${vsc#origin/}; base=${gh:-$vsc}; [ -z "$base" ] && base=$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null || git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||'); (git log origin/"$base"..HEAD --oneline 2>/dev/null || git log "$base"..HEAD --oneline 2>/dev/null) | sed 's/^/  /'; echo "(↑これは起動時点のスナップショット。手順2で /commit が作る新規コミットはまだ含まれない)"`
 - 既存PR (current branch): !`b=$(git branch --show-current); gh pr list --state open --head "$b" --json number,url,title,body --jq 'if length>0 then .[0] | "#\(.number) \(.url)\nTITLE: \(.title)\nBODY:\n\(.body)" else "(なし — 新規作成する)" end' 2>/dev/null || echo "(なし — 新規作成する)"`
+- 既存PRの同一性チェック（先頭コミットがローカル履歴に存在するか）: !`b=$(git branch --show-current); n=$(gh pr list --state open --head "$b" --json number --jq '.[0].number' 2>/dev/null); if [ -z "$n" ]; then echo "(既存PRなし — チェック不要)"; else first=$(gh pr view "$n" --json commits --jq '.commits[0].oid' 2>/dev/null); if [ -z "$first" ]; then echo "(コミット情報取得失敗)"; elif git cat-file -e "$first" 2>/dev/null; then echo "OK: PR #$n の先頭コミット($first)はローカル履歴に存在する → 同一ブランチの続き"; else echo "警告: PR #$n の先頭コミット($first)がローカル履歴に存在しない → ブランチ名が同じだけの別件PRの可能性が高い。安易に上書き更新しない"; fi; fi`
 
 ## あなたのタスク
 
@@ -23,6 +24,8 @@ model: sonnet
    **重要:** `/commit` は「コミットだけ」を担当する独立したスキルなので、呼び出しが返ってきた時点では「コミット完了」という一区切りに見える。だがそれはこのタスク全体の**中間地点**に過ぎない。`/commit` から制御が戻ったら、ここで止まらず**必ず手順3（push）以降へ続ける**。コミットだけして完了レポートを出して終了するのは誤りで、これがこのスキルで最も起きやすい失敗。「コミットが終わった」は「タスクが終わった」ではない。
 3. ブランチをoriginにプッシュする
 4. プルリクエストのタイトルと本文を用意し、上記 "既存PR" の有無に応じて新規作成または更新する。
+
+   **既存PRの有無・同一性の判定は、Context の "既存PR" および "既存PRの同一性チェック" の値のみを正とする。** `gh pr view`（引数なし）や `gh pr list`（`--state open` を付けない形）などで既存PRを**独自に探し直してはいけない**。これらは close/merge 済みのPRまでカレントブランチから解決してしまい、ブランチ名を使い回したときに無関係な過去のPRを誤って掴む原因になる（実際にこの誤りでマージ済みPRのタイトル/本文を上書きする事故が起きた）。既存PRの番号・URL・現行タイトル/本文が必要な場合も、Context に出ている値をそのまま使う。
 
    まず、PRに含めるコミット集合と diff を**この時点で取得し直す**。`<base>` を Context の "PR base branch" の値として:
    - コミット集合: `git log origin/<base>..HEAD --oneline 2>/dev/null || git log <base>..HEAD --oneline`
@@ -40,7 +43,11 @@ model: sonnet
 
    **既存PRがない場合（"既存PR" が「なし」）:** `gh pr create` で新規作成する。`--base` には上記 "PR base branch" の値を使う。これは記録済みの分岐元を尊重するため、デフォルトブランチとは限らない（stacked PR に対応するため）。
 
-   **既存PRがある場合（"既存PR" に番号・URLが出ている）:** 再生成したタイトル/本文を、"既存PR" に出ている現在の TITLE/BODY と比較する。この「再生成」の入力も上記のとおり `base..HEAD` の全コミット集合であって、既存PRの現行本文ではない（既存本文にマージするのではなく、全コミットからゼロベースで作り直す）。
+   **既存PRがある場合（"既存PR" に番号・URLが出ている）:** まず Context の「既存PRの同一性チェック」の結果を確認する。
+   - **警告（既存PRの先頭コミットがローカル履歴に存在しない）が出ている場合:** そのPRはブランチ名が同じだけで、実際には無関係な別件PRである可能性が高い（例: 過去に使ったブランチ名を再利用し、リモートに残っていた別作業のPRを誤って掴んでいる）。この場合 `gh pr edit` によるタイトル/本文の上書きは**行わない**。手順3のpushはこの懸念と無関係なので通常通り進めてよい。push後、ユーザーに状況（PR番号・URL・現在のタイトル）を提示し、「push は完了しましたが、PR #<番号> は別件の可能性があるため更新していません。新規PRを作成しますか、それとも他の対応が必要ですか」と確認を取ってから次に進む（この提示は手順4完了前の確認であり、完了レポートではない）。
+   - **OK（先頭コミットがローカル履歴に存在する＝同一ブランチの正当な続き）の場合:** 以下の通常フローに進む。
+
+   再生成したタイトル/本文を、"既存PR" に出ている現在の TITLE/BODY と比較する。この「再生成」の入力も上記のとおり `base..HEAD` の全コミット集合であって、既存PRの現行本文ではない（既存本文にマージするのではなく、全コミットからゼロベースで作り直す）。
    - 両方とも実質的に同じなら更新せず、そのまま次へ進む（この場合は確認も不要）。
    - 差があるフィールドがある場合は、**`gh pr edit` を実行する前に、更新するタイトル/本文をユーザーに提示して承認を取る。** 承認を得てから、差があるフィールドのみ `gh pr edit --title <...>` / `--body <...>` で更新する（タイトルだけ違う場合は `--title` のみ、本文だけ違う場合は `--body` のみ）。承認されなければ更新しない。
    - base は既存PRのものを尊重し、ここでは変更しない。
