@@ -223,6 +223,15 @@ User:
   消えない。正しくは `Model: { id: { PrimaryKeyTypeChecker: { enabled: false } } }`。
   他のカラム単位チェッカーと同様、書いたら再実行して当該モデルの違反が消えたことを
   必ず確認すること。
+- **`UniqueIndexChecker` / `RedundantIndexChecker` / `RedundantUniqueIndexChecker` は
+  `IndexChecker` 系であり、キーはカラム名でも association 名でもなく `schema.rb` 上の
+  **DB index 名**（例: `index_buildings_on_token`）にする必要がある。** gem 内部の実装
+  （`IndexChecker#column_or_attribute_name` が `index.name` を返す）がそうなっているため。
+  カラム名（`token` 等）で書いても構文エラーにはならず、**無効化が黙って効かない**
+  （該当違反が消えないまま気づかない）という、他のカラム単位チェッカーと同じ失敗をする。
+  複合カラムの index でも `col_a+col_b` のような連結は不要で、index 名1つだけを書けばよい。
+  設定を書いたら必ず `bundle exec database_consistency` を再実行し、対象の違反が実際に
+  出力から消えたことを確認すること。
 
 ## 本番データ依存チェッカー（migration 前にデータ確認が要るもの）
 
