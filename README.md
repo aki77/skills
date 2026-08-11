@@ -17,6 +17,7 @@
 |----------|------|
 | [pr-summary](skills/github/pr-summary/) | GitHub PR URLを受け取り、日本語でサマリーを生成する |
 | [pr-tidy-classifier](skills/github/pr-tidy-classifier/) | GitHub PR を Tidy First? パターンで分類し、構造的リファクタリングかを判定する |
+| [pr-human-review-gate](skills/github/pr-human-review-gate/) | GitHub PR を8トリガーに照らして人間レビューの要否を判定し、required / pending / optional で報告する |
 | [dependabot-triage](skills/github/dependabot-triage/) | Dependabot のPR・設定を診断し、ノイズPRや不要な更新を抑える正しい対処を選ぶスキル |
 | [pr-review-comments-resolve](skills/github/pr-review-comments-resolve/) | GitHub PRのレビューコメントのうち、Hide・解決済みでないものだけを抽出して対応する |
 | [diagnose-ci-failure](skills/github/diagnose-ci-failure/) | GitHub Actions のCI失敗を、原因分類・ローカル再現・修正・検証まで体系的に進める |
