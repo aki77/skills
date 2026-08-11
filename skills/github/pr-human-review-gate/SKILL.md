@@ -13,8 +13,6 @@ disable-model-invocation: true
 
 目的は、レビューをリードタイムのボトルネックから外すことにある。PR の大半は人間が目を通しても指摘が出ない。そこで「**本当に品質を担保すべき領域**」を 8 トリガーに限定列挙し、そこに触れない PR は人間レビュー不要 (`optional`) として流す。
 
-参考: [レビューリードタイム改善のためのPR分類 (SHE Tech Blog, 2026)](https://zenn.dev/she_techblog/articles/937836550dfdf3)
-
 > **注記**: このスキルに `context: fork` を付けてはならない。AskUserQuestion はユーザー入力を待つ UI をフロントエンドに出すため、fork したサブエージェント内では質問が届かず、「一回の実行で `required` / `optional` まで確定させる」仕様が壊れる。
 
 ---
