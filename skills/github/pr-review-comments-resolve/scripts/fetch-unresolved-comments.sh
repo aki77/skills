@@ -89,12 +89,12 @@ CURSOR=""
 while :; do
   if [ -n "$CURSOR" ]; then
     PAGE="$(gh api graphql -f query="$QUERY" -F owner="$OWNER" -F name="$REPO" -F number="$NUMBER" -F cursor="$CURSOR")" || {
-      err "gh api graphql の呼び出しに失敗した（owner=$OWNER repo=$REPO number=$NUMBER）"
+      err "gh api graphql の呼び出しに失敗した（owner=${OWNER} repo=${REPO} number=${NUMBER}）"
       exit 2
     }
   else
     PAGE="$(gh api graphql -f query="$QUERY" -F owner="$OWNER" -F name="$REPO" -F number="$NUMBER")" || {
-      err "gh api graphql の呼び出しに失敗した（owner=$OWNER repo=$REPO number=$NUMBER）"
+      err "gh api graphql の呼び出しに失敗した（owner=${OWNER} repo=${REPO} number=${NUMBER}）"
       exit 2
     }
   fi
