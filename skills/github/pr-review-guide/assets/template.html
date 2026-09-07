@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>レビューガイド</title>
+<!--
+  ============================================================
+  このファイルは 1 ファイル完全自己完結の HTML 骨格である。
+  GitHub Actions の単一 artifact として配信し、URL を開くだけで
+  ブラウザに表示される前提のため、外部依存を一切持てない。
+
+  【絶対禁止】次のものを出力に含めてはならない。
+    - script 要素（mermaid 等のライブラリ読み込み・インライン JS ともに不可）
+    - link 要素（外部スタイルシート・フォント）
+    - iframe 要素
+    - CSS の import 規則
+    - 読み込みを伴う外部 URL（img 要素の src、CSS の url 関数など）
+    - mermaid 記法（レンダラを読み込めないため素のテキストとして表示される）
+  画像が必要な場合は data URI のみ。図はすべて手書きのインライン svg 要素で描く。
+  これらをコード例として本文に載せたい場合は、削除するのではなく
+  実体参照でエスケープする（&lt; と &gt; を使う）。
+  なお本文の a 要素の href で PR などにリンクするのは問題ない（何も読み込まないため）。
+
+  【モデルが触ってよい範囲】
+    - 二重波かっこで囲まれた大文字トークン（差し込みスロット）の値
+    - figure 要素の中身（svg 要素の本体）
+  それ以外（doctype / lang / style 要素の中身 / section 要素の id / セクションの順序 /
+  ヘッダーとフッターの項目）は変更しない。検証スクリプトが骨格の破損を検出する。
+
+  【図と各セクションの書き方】
+    references/diagrams.md が一次文書。図の種類・色の意味・viewBox の規則・
+    セクションごとの指針・図の予算はすべてそこにあるので、着手前に必ず読む。
+    ここに再掲すると二重管理になり、生成物にも毎回混入するため書かない。
+
+  【任意の図を使わない場合】
+    figure 要素ごと丸ごと削除する。空の figure を残してはならない
+    （キャプションや差し込みスロットも figure の中にあるため一緒に消える）。
+    セクション本体（section 要素）は残し、図だけを落とす。任意の図を持つ
+    セクションも、本文のスロットは埋める必要がある（figure の外にあるため）。
+  ============================================================
+-->
+<style>
+  :root {
+    color-scheme: light;
+
+    /* 意味を持つ色は 3 つだけ。図と凡例で共有する。 */
+    --c-same-fill: #f1f3f5;   /* 変更なし */
+    --c-same-line: #adb5bd;
+    --c-chg-fill:  #fff3bf;   /* このPRで変更 */
+    --c-chg-line:  #f08c00;
+    --c-new-fill:  #d3f9d8;   /* このPRで新規 */
+    --c-new-line:  #2f9e44;
+
+    --c-text:      #1a1d21;
+    --c-text-dim:  #5c636a;
+    --c-bg:        #ffffff;
+    --c-bg-soft:   #f8f9fa;
+    --c-border:    #dee2e6;
+    --c-accent:    #1971c2;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0 auto;
+    padding: 24px 20px 64px;
+    max-width: 1000px;
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Hiragino Sans",
+                 "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    text-align: left;
+  }
+
+  h1 { font-size: 1.65rem; line-height: 1.4; margin: 0 0 12px; }
+  h2 {
+    font-size: 1.3rem; line-height: 1.4;
+    margin: 0 0 8px; padding-bottom: 6px;
+    border-bottom: 2px solid var(--c-border);
+  }
+  h3 { font-size: 1.05rem; margin: 24px 0 4px; }
+  p { margin: 0 0 14px; }
+  ul, ol { margin: 0 0 14px; padding-left: 1.5em; }
+  li { margin-bottom: 6px; }
+  a { color: var(--c-accent); }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9em;
+    background: var(--c-bg-soft);
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+  pre {
+    background: var(--c-bg-soft);
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    line-height: 1.6;
+  }
+  pre code { background: none; border: none; padding: 0; }
+
+  /* ---- ヘッダー ---- */
+  .doc-head {
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    background: var(--c-bg-soft);
+    padding: 18px 20px;
+    margin-bottom: 32px;
+  }
+  .meta {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 16px;
+    margin: 0 0 14px;
+    font-size: 0.92rem;
+  }
+  .meta dt { color: var(--c-text-dim); }
+  .meta dd { margin: 0; overflow-wrap: anywhere; }
+  /* 用語集: 用語を太字、説明を1段下げて対で読めるようにする（最大5件） */
+  .glossary { margin: 8px 0 0; }
+  .glossary dt { font-weight: 600; margin-top: 10px; }
+  .glossary dd { margin: 2px 0 0; color: var(--c-text-dim); overflow-wrap: anywhere; }
+  .sha {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: #fff;
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+
+  /* ---- 凡例 ---- */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin: 0;
+    padding: 12px 0 0;
+    border-top: 1px solid var(--c-border);
+    list-style: none;
+    font-size: 0.88rem;
+  }
+  .legend li { display: flex; align-items: center; gap: 7px; margin: 0; }
+  .swatch {
+    display: inline-block;
+    width: 26px; height: 14px;
+    border-radius: 3px;
+    flex: none;
+  }
+  .swatch--same { background: var(--c-same-fill); border: 2px solid var(--c-same-line); }
+  .swatch--chg  { background: var(--c-chg-fill);  border: 2px solid var(--c-chg-line); }
+  .swatch--new  { background: var(--c-new-fill);  border: 2px solid var(--c-new-line); }
+
+  /* ---- セクション ---- */
+  section { margin: 0 0 44px; }
+  .lede { color: var(--c-text-dim); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* ---- 図 ---- */
+  figure { margin: 24px 0; }
+  figure svg { display: block; width: 100%; height: auto; }
+  figcaption {
+    margin-top: 8px;
+    color: var(--c-text-dim);
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
+  /* 図の描画プリミティブ。図ごとに色の意味を変えないため、
+     これらのクラスの組み合わせだけで描く。 */
+  svg .node {
+    fill: var(--c-same-fill);
+    stroke: var(--c-same-line);
+    stroke-width: 2;
+  }
+  svg .node--chg { fill: var(--c-chg-fill); stroke: var(--c-chg-line); }
+  svg .node--new { fill: var(--c-new-fill); stroke: var(--c-new-line); }
+
+  svg .edge {
+    fill: none;
+    stroke: var(--c-same-line);
+    stroke-width: 2.5;
+    marker-end: url(#arrow);
+  }
+  svg .edge--chg {
+    stroke: var(--c-chg-line);
+    marker-end: url(#arrow-chg);
+  }
+
+  svg .lbl {
+    font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Hiragino Sans",
+                 "Noto Sans JP", sans-serif;
+    font-size: 17px;
+    fill: var(--c-text);
+    text-anchor: middle;
+    dominant-baseline: middle;
+  }
+  svg .lbl--sm { font-size: 15px; fill: var(--c-text-dim); }
+
+  /* 領域・レイヤの背景帯 */
+  svg .band {
+    fill: var(--c-bg-soft);
+    stroke: var(--c-border);
+    stroke-width: 2;
+    stroke-dasharray: 6 5;
+  }
+
+  /* ---- フッター ---- */
+  .doc-foot {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--c-border);
+    color: var(--c-text-dim);
+    font-size: 0.88rem;
+  }
+  .doc-foot p { margin: 0 0 6px; }
+
+  /* ---- 印刷 ---- */
+  @media print {
+    body { max-width: none; padding: 0; font-size: 11pt; }
+    section, figure, .doc-head { break-inside: avoid; page-break-inside: avoid; }
+    h2 { break-after: avoid; page-break-after: avoid; }
+    a { color: inherit; text-decoration: none; }
+    .doc-head, pre, code { background: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 矢印マーカーの定義。display:none にすると Chrome / WebKit でマーカーが
+     描画されないため position:absolute で潰す。この svg には viewBox を付けない。 -->
+<svg style="position:absolute; width:0; height:0" aria-hidden="true" focusable="false">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#adb5bd"></path>
+    </marker>
+    <marker id="arrow-chg" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f08c00"></path>
+    </marker>
+  </defs>
+</svg>
+
+<header class="doc-head">
+  <h1>{{FILL:PR_TITLE}}</h1>
+  <dl class="meta">
+    <dt>PR</dt>
+    <dd><a href="{{FILL:PR_URL}}">#{{FILL:PR_NUMBER}}</a></dd>
+    <dt>ブランチ</dt>
+    <dd><code>{{FILL:BASE_REF}}</code> &larr; <code>{{FILL:HEAD_REF}}</code></dd>
+    <dt>このガイドが説明している時点</dt>
+    <dd><code class="sha">{{FILL:HEAD_SHA}}</code>（head SHA）</dd>
+    <dt>変更規模</dt>
+    <dd>{{FILL:CHANGED_FILES}} ファイル / +{{FILL:ADDITIONS}} / -{{FILL:DELETIONS}}</dd>
+    <dt>生成日時</dt>
+    <dd>{{FILL:GENERATED_AT}}</dd>
+  </dl>
+  <ul class="legend">
+    <li><span class="swatch swatch--same" aria-hidden="true"></span>変更なし（既存のまま）</li>
+    <li><span class="swatch swatch--chg" aria-hidden="true"></span>このPRで変更</li>
+    <li><span class="swatch swatch--new" aria-hidden="true"></span>このPRで新規</li>
+  </ul>
+</header>
+
+<section id="sec-summary">
+  <h2>30秒でつかむ</h2>
+  <p class="lede">ここだけ読めば、この変更の形が分かる。</p>
+  <figure id="fig-summary">
+    {{FILL:SVG_SUMMARY}}
+    <figcaption>{{FILL:CAPTION_SUMMARY}}</figcaption>
+  </figure>
+  {{FILL:TEXT_SUMMARY}}
+</section>
+
+<section id="sec-why">
+  <h2>何を解決する PR か</h2>
+  <p class="lede">解決しようとしている課題 &rarr; 選んだ手段 &rarr; なぜその手段か。</p>
+  <figure id="fig-why">
+    {{FILL:SVG_WHY}}
+    <figcaption>{{FILL:CAPTION_WHY}}</figcaption>
+  </figure>
+  {{FILL:TEXT_WHY}}
+</section>
+
+<section id="sec-map">
+  <h2>全体地図</h2>
+  <p class="lede">このコードベースを初めて見る人向けの前提知識と、差分がどこに位置するか。</p>
+  <figure id="fig-map">
+    {{FILL:SVG_MAP}}
+    <figcaption>{{FILL:CAPTION_MAP}}</figcaption>
+  </figure>
+  {{FILL:TEXT_MAP}}
+  <h3>この PR を読むために必要な用語</h3>
+  <dl class="glossary">
+    {{FILL:GLOSSARY}}
+  </dl>
+</section>
+
+<section id="sec-impact">
+  <h2>影響が出る範囲</h2>
+  <p class="lede">この変更が外から見えるかたちで影響する先（画面・API・データ・他機能）。</p>
+  <figure id="fig-impact">
+    {{FILL:SVG_IMPACT}}
+    <figcaption>{{FILL:CAPTION_IMPACT}}</figcaption>
+  </figure>
+  {{FILL:TEXT_IMPACT}}
+</section>
+
+<section id="sec-path">
+  <h2>レビューの経路</h2>
+  <p class="lede">この順に読むと、変更の筋が通って見える。ファイル単位ではなく関心事単位でまとめている。</p>
+  <figure id="fig-path">
+    {{FILL:SVG_PATH}}
+    <figcaption>{{FILL:CAPTION_PATH}}</figcaption>
+  </figure>
+  {{FILL:TEXT_PATH}}
+</section>
+
+<section id="sec-skip">
+  <h2>読み飛ばしてよい変更</h2>
+  <p class="lede">機械的な差分。本筋の判断には関係しない。</p>
+  {{FILL:LIST_SKIP}}
+</section>
+
+<footer class="doc-foot">
+  <p>このガイドは head SHA <code class="sha">{{FILL:HEAD_SHA}}</code> 時点の内容を説明している。</p>
+  <p>これ以降に push があった場合、この内容は最新ではない。PR の最新コミットと head SHA を見比べて確認すること。</p>
+  <p>生成日時: {{FILL:GENERATED_AT}}</p>
+</footer>
+
+</body>
+</html>

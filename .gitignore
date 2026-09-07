@@ -1,1 +1,4 @@
 .DS_Store
+
+# pr-review-guide の eval は対象PRのURL（固有情報）を含むためコミットしない
+skills/github/pr-review-guide/evals/
