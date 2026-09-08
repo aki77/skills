@@ -103,15 +103,18 @@ gh api repos/<owner>/<repo>/pulls/<N>/files --paginate --jq '.[] | select(.filen
 
 ```bash
 git rev-parse HEAD
-git status --porcelain
+git status --porcelain -- ':/' ':(exclude,top).claude' ':(exclude,top)CLAUDE.md' ':(exclude,top)CLAUDE.local.md' ':(exclude,top).mcp.json' ':(exclude,top).claude.json' ':(exclude,top).gitmodules' ':(exclude,top).ripgreprc' ':(exclude,top).husky'
 ```
 
-`git rev-parse HEAD` の出力と手順 1 の `headRefOid` を**目で突き合わせる。** 加えて `git status --porcelain` の**出力が空であること**を確認する。両方を満たしたときだけ、作業ツリーは PR の head であり、**Read / Grep / Glob をそのまま使ってよい。**
+`git rev-parse HEAD` の出力と手順 1 の `headRefOid` を**目で突き合わせる。** 加えて上の `git status` の**出力が空であること**を確認する。両方を満たしたときだけ、作業ツリーは PR の head であり、**Read / Grep / Glob をそのまま使ってよい。**
 
-- **SHA だけでは足りない。** `git rev-parse HEAD` はコミットの SHA を返すだけで、未コミットの手元編集を反映しない。SHA が一致していても作業ツリーが dirty なら、実際に読むファイルは head と異なる内容である（ローカルで PR ブランチを checkout したまま編集を残しているケース）。`git status --porcelain` に 1 行でも出たら、それは head ではない。
+- **設定パスを除外する理由。** CI（claude-code-action など）は PR 上で動くとき、`.claude/` をはじめとする設定パスを base ブランチの内容へ差し戻すことがある。PR が仕込んだ設定をそのまま実行しないための**ツール側の意図的な差し戻し**であり、PR の内容とは無関係に作業ツリーを dirty にする。そのため検証対象から外す。除外リストの出所は claude-code-action の `src/github/operations/restore-config.ts` にある `SENSITIVE_PATHS`（上流が所有するリストなので、将来増減しうる）。**それ以外のパスが dirty なら従来どおり中断理由である。**
+- **`':/'` と `,top` を省かない。** `-- . ':(exclude).claude'` のような素朴な書き方は cwd 相対に解釈され、サブディレクトリから実行すると検証範囲が黙って狭まる（リポジトリ直下以外を cwd にすると、その外側の改変を取りこぼして空を返す）。`':/'` でリポジトリ全体を対象にし、除外側も `,top` でリポジトリ直下からの相対に固定する。
+- **差し戻されたパスは base 版が読める。** 差し戻し後に `.claude/` や `CLAUDE.md` を読むと、PR 版ではなく base 版の内容が返る（手順 3 で `CLAUDE.md` を読むときに効いてくる）。PR 版は action が `.claude-pr/` へ退避するが、このスキルからは参照しない。
+- **SHA だけでは足りない。** `git rev-parse HEAD` はコミットの SHA を返すだけで、未コミットの手元編集を反映しない。SHA が一致していても作業ツリーが dirty なら、実際に読むファイルは head と異なる内容である（ローカルで PR ブランチを checkout したまま編集を残しているケース）。**除外後の出力**に 1 行でも出たら、それは head ではない。
 - **SHA の比較を複合コマンドにしない。** `git rev-parse HEAD` と `headRefOid` は別々に取得して比較する。`[ "$(git rev-parse HEAD)" = ... ]` のような形は `allowed-tools` のプレフィックス照合に一致せず、headless で止まる。
 - **detached HEAD でも動く。** `ref: <sha>` の checkout は detached HEAD になるが `git rev-parse HEAD` は正常に SHA を返す。`git branch --show-current` のようなブランチ名に依存するコマンドは使わない（detached では空を返す）。
-- **SHA の不一致、作業ツリーが dirty、あるいはコマンド自体が失敗した場合（cwd が git リポジトリでないなど）は、成果物を作らずに終える。** SHA 不一致なら取得した 2 つの SHA（`git rev-parse HEAD` の出力と `headRefOid`）を両方報告し、dirty なら `git status --porcelain` の出力を報告する。何がずれているか分からなければ呼び出し側を直せない。フォールバックして別の経路で読むことはしない。誤ったコードから作った地図は、地図がないことより有害である。
+- **SHA の不一致、作業ツリーが dirty、あるいはコマンド自体が失敗した場合（cwd が git リポジトリでないなど）は、成果物を作らずに終える。** SHA 不一致なら取得した 2 つの SHA（`git rev-parse HEAD` の出力と `headRefOid`）を両方報告し、dirty なら上の除外つき `git status` の出力を報告する。何がずれているか分からなければ呼び出し側を直せない。フォールバックして別の経路で読むことはしない。誤ったコードから作った地図は、地図がないことより有害である。
 
 **不一致でも checkout し直さない。** 作業ツリーは読み取るだけである。
 
