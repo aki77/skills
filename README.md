@@ -56,4 +56,3 @@
 | [icon-generator](skills/misc/icon-generator/) | SVGソースからPNGアイコンアセットを生成する |
 | [diy-drawing](skills/misc/diy-drawing/) | 自然言語からDIY家具・木工図面（カット図・寸法図・組み立て図・材料リスト）を生成する |
 | [japan-finance-expert](skills/misc/japan-finance-expert/) | 日本の個人金融制度（新NISA・iDeCo等）に関する質問に専門家として回答する |
-| [eli5](skills/misc/eli5/) | トピックを5歳児にもわかるよう図解説明する（--local で単体HTMLファイル出力） |
