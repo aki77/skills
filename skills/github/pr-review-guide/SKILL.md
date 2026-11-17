@@ -26,6 +26,7 @@ model: sonnet
 | `pr-summary` | PR 本文（Markdown） | プロジェクトを**知っている**レビュアー向けの簡潔な要約 |
 | `pr-human-review-gate` | 会話（3 値判定） | 人間レビューの要否を判定する |
 | **`pr-review-guide`** | **HTML 1 ファイル** | **初見のレビュアーに変更を「理解」させる** |
+| `pr-story` | PR の sticky コメント（Markdown） | 章順に読む hunk の案内 |
 
 このスキルは**解説者でありレビュアーではない**。バグを探さない・修正を提案しない・良し悪しを判定しない。
 

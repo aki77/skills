@@ -21,6 +21,7 @@
 | [pr-review-comments-resolve](skills/github/pr-review-comments-resolve/) | GitHub PRのレビューコメントのうち、Hide・解決済みでないものだけを抽出して対応する |
 | [diagnose-ci-failure](skills/github/diagnose-ci-failure/) | GitHub Actions のCI失敗を、原因分類・ローカル再現・修正・検証まで体系的に進める |
 | [pr-review-guide](skills/github/pr-review-guide/) | GitHub PR を初見のレビュアー向けに図解した自己完結HTMLを1ファイル生成する |
+| [pr-story](skills/github/pr-story/) | GitHub PR の差分を機能単位の章に分け、章順に読む案内を PR の sticky コメントとして生成・更新する |
 
 ## claude
 

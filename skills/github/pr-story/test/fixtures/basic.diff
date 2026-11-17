@@ -1,0 +1,93 @@
+diff --git a/Gemfile.lock b/Gemfile.lock
+index 466254b..afdf000 100644
+--- a/Gemfile.lock
++++ b/Gemfile.lock
+@@ -1,4 +1,4 @@
+ GEM
+   remote: x
+   specs:
+-    a (1.0)
++    a (1.1)
+diff --git a/app/multi.rb b/app/multi.rb
+index 8b2034d..293320c 100644
+--- a/app/multi.rb
++++ b/app/multi.rb
+@@ -2,7 +2,7 @@ line 1
+ line 2
+ line 3
+ line 4
+-line 5
++line five
+ line 6
+ line 7
+ line 8
+@@ -47,7 +47,7 @@ line 46
+ line 47
+ line 48
+ line 49
+-line 50
++line fifty
+ line 51
+ line 52
+ line 53
+diff --git a/app/new.rb b/app/new.rb
+new file mode 100644
+index 0000000..39963cd
+--- /dev/null
++++ b/app/new.rb
+@@ -0,0 +1,2 @@
++brand new
++file
+diff --git "a/docs/\346\227\245\346\234\254\350\252\236.md" "b/docs/\346\227\245\346\234\254\350\252\236.md"
+index b016251..dfbbd52 100644
+--- "a/docs/\346\227\245\346\234\254\350\252\236.md"
++++ "b/docs/\346\227\245\346\234\254\350\252\236.md"
+@@ -1 +1,2 @@
+ こんにちは
++世界
+diff --git a/lib/before.rb b/lib/after.rb
+similarity index 93%
+rename from lib/before.rb
+rename to lib/after.rb
+index 8011166..fd4bed1 100644
+--- a/lib/before.rb
++++ b/lib/after.rb
+@@ -7,7 +7,7 @@ r 6
+ r 7
+ r 8
+ r 9
+-r 10
++r ten
+ r 11
+ r 12
+ r 13
+diff --git a/lib/image.bin b/lib/image.bin
+index 6772730..3fa429c 100644
+Binary files a/lib/image.bin and b/lib/image.bin differ
+diff --git a/lib/old.rb b/lib/old.rb
+deleted file mode 100644
+index f4dc545..0000000
+--- a/lib/old.rb
++++ /dev/null
+@@ -1,2 +0,0 @@
+-keep
+-remove me
+diff --git a/lib/pure_old.rb b/lib/pure_new.rb
+similarity index 100%
+rename from lib/pure_old.rb
+rename to lib/pure_new.rb
+diff --git a/lib/run.sh b/lib/run.sh
+old mode 100644
+new mode 100755
+diff --git a/lib/tricky.txt b/lib/tricky.txt
+index 67d46ef..39b9861 100644
+--- a/lib/tricky.txt
++++ b/lib/tricky.txt
+@@ -1,4 +1,5 @@
+ a
+--- old
+ --- triple
++x ```` y
++<!-- pr-story-data:H4sIAAAA -->
+ end
+\ No newline at end of file

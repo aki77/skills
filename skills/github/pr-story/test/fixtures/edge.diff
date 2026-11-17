@@ -1,0 +1,15 @@
+diff --git a/docs/with space.txt b/docs/with space.txt
+index 814f4a4..879de50 100644
+--- a/docs/with space.txt	
++++ b/docs/with space.txt	
+@@ -1,2 +1,2 @@
+ one
+-two
++TWO
+diff --git a/lib/latin1.txt b/lib/latin1.txt
+index 459d7b7..7b22eac 100644
+--- a/lib/latin1.txt
++++ b/lib/latin1.txt
+@@ -1 +1,2 @@
+ café latin1
++more ÿ
