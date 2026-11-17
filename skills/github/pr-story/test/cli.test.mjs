@@ -45,6 +45,10 @@ function fakeExec(opts = {}) {
       if (args.includes('diff')) return fixture('basic.diff');
       return Buffer.alloc(0);
     }
+    if (cmd === 'gh' && args[0] === 'api' && args.some((a) => a.includes('/git/trees/'))) {
+      if (opts.treeFails) throw new CommandError('gh api が失敗した: HTTP 404');
+      return j({ truncated: false, tree: [{ path: 'app', type: 'tree' }, { path: 'app/components/x.rb', type: 'blob' }] });
+    }
     if (cmd === 'gh' && args[0] === 'api') {
       const method = args.includes('--method') ? args[args.indexOf('--method') + 1] : 'GET';
       if (method === 'GET') return j([opts.comments ?? []]);
@@ -141,6 +145,32 @@ test('prep は作業ディレクトリに prep.json / prep.txt / previous-story.
   assert.equal(prep.head, HEAD);
   assert.equal(prep.diff_source, 'gh');
   assert.match(readFileSync(r.json.prep_txt, 'utf8'), /=== HUNKS ===/);
+  assert.ok(r.calls.some((c) => c.args.join(' ') === `api repos/octo/demo/git/trees/${HEAD}?recursive=1`));
+  assert.deepEqual(JSON.parse(readFileSync(join(dir, 'tree.json'), 'utf8')), { truncated: false, paths: ['app/components/x.rb'] });
+});
+
+test('trees API が失敗しても prep は成功し、tree.json は空になる', async () => {
+  const r = await prepared({ treeFails: true });
+  assert.deepEqual(JSON.parse(readFileSync(join(r.json.dir, 'tree.json'), 'utf8')), { truncated: true, paths: [] });
+  const story = validStory();
+  story.prologue.impact = ['app/components/x.rb'];
+  writeFileSync(join(r.json.dir, 'story.json'), JSON.stringify(story));
+  const v = await runCli(['validate', '--dir', r.json.dir], {}, r.tmp);
+  assert.equal(v.code, 0, v.err);
+  assert.equal(v.json.warnings.find((w) => w.code === 'unlinked_paths').tree_truncated, true);
+});
+
+test('validate と render は tree.json を使ってパスを判定する', async () => {
+  const { json, tmp } = await prepared();
+  const story = validStory();
+  story.prologue.impact = ['app/components/x.rb と app/missing.rb'];
+  writeFileSync(join(json.dir, 'story.json'), JSON.stringify(story));
+  const v = await runCli(['validate', '--dir', json.dir], {}, tmp);
+  assert.equal(v.code, 0, v.err);
+  assert.deepEqual(v.json.warnings.find((w) => w.code === 'unlinked_paths').paths, [{ path: 'app/missing.rb', locations: ['prologue.impact[0]'] }]);
+  assert.equal((await runCli(['render', '--dir', json.dir], {}, tmp)).code, 0);
+  const md = readFileSync(join(json.dir, 'comment.md'), 'utf8');
+  assert.ok(md.includes(`[app/components/x.rb](https://github.com/octo/demo/blob/${HEAD}/app/components/x.rb) と app/missing.rb`));
 });
 
 test('prep は前回の作業ファイルを消す', async () => {

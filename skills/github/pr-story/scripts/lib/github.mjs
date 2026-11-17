@@ -96,6 +96,13 @@ export function createGitHub(exec = defaultExec) {
     return pages.flat();
   }
 
+  // head のファイル一覧（blob のみ）。大きいリポジトリでは truncated になり、一部しか返らない
+  function listTree(pr, sha) {
+    const data = json(exec('gh', ['api', ...hostArgs(pr), `repos/${pr.owner}/${pr.repo}/git/trees/${sha}?recursive=1`]));
+    const paths = (data.tree ?? []).filter((t) => t.type === 'blob').map((t) => t.path);
+    return { truncated: data.truncated === true, paths };
+  }
+
   function updateComment(pr, id, body) {
     return json(exec('gh', ['api', ...hostArgs(pr), '--method', 'PATCH', `repos/${pr.owner}/${pr.repo}/issues/comments/${id}`, '--input', '-'], { input: JSON.stringify({ body }) }));
   }
@@ -104,5 +111,5 @@ export function createGitHub(exec = defaultExec) {
     return json(exec('gh', ['api', ...hostArgs(pr), '--method', 'POST', `repos/${pr.owner}/${pr.repo}/issues/${pr.number}/comments`, '--input', '-'], { input: JSON.stringify({ body }) }));
   }
 
-  return { viewPr, currentHead, fetchDiff, listComments, updateComment, createComment };
+  return { viewPr, currentHead, fetchDiff, listComments, listTree, updateComment, createComment };
 }

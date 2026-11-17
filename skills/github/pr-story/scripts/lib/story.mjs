@@ -1,4 +1,5 @@
 import { NO_HUNK_LABELS, compareIds, hunkIdString, hunkKey, indexHunks } from './diff.mjs';
+import { findPaths, makePathLinker } from './paths.mjs';
 
 export const MAX_TITLE = 48;
 export const MAX_GLOSSARY = 5;
@@ -21,8 +22,11 @@ function stringList(v) {
 }
 
 // story.json を prep の索引に照らして検証・正規化する。
-// 誤りは最初の 1 件で止めず全種類を集めて返す（Claude が 1 回で直せるように）
-export function validateStory(story, prep) {
+// 誤りは最初の 1 件で止めず全種類を集めて返す（Claude が 1 回で直せるように）。
+// tree は { paths, truncated }。paths は head のツリーにあるファイルパスの一覧（散文中のパスがリンクになるかの判定に使う）。
+// truncated はツリーが取れなかった・一部しか取れなかったことを示す
+export function validateStory(story, prep, { tree = {} } = {}) {
+  const treeTruncated = tree.truncated === true;
   const errors = [];
   const warnings = [];
   const err = (code, message, extra = {}) => errors.push({ code, message, ...extra });
@@ -224,7 +228,44 @@ export function validateStory(story, prep) {
     warn('auto_filled', `未配置の hunk ${missing.length} 件を support（${REASON_AUTO_FILLED}）に補填した`, { refs: missing.map(withId) });
   }
 
+  const unlinked = findUnlinkedPaths({ prologue, chapters, support }, makePathLinker(prep, tree));
+  if (unlinked.length > 0) {
+    const message = treeTruncated
+      ? 'PR の差分にないパスはリンクにしなかった。head のファイル一覧を取得できなかった（または一部だけだった）ため、実在するパスも含まれうる。明らかな打ち間違いだけ直す'
+      : 'PR の差分にも head のツリーにもないパスはリンクにしなかった。打ち間違いなら直して再実行する';
+    warn('unlinked_paths', message, { paths: unlinked, ...(treeTruncated ? { tree_truncated: true } : {}) });
+  }
+
   return result(true, errors, warnings, coverage, { prologue, chapters, support });
+}
+
+// render でリンク化する散文（見出し・用語・図は除く）を、場所の名前と組で列挙する。
+// render.mjs の build が prose / line（リンク化あり）を使うフィールドと対応させること。片方を変えたらもう片方も変える
+function proseFields(story) {
+  const p = story.prologue;
+  return [
+    ['prologue.overview', p.overview],
+    ...['problem', 'approach', 'rationale'].map((k) => [`prologue.motivation.${k}`, p.motivation[k]]),
+    ...p.key_changes.map((s, i) => [`prologue.key_changes[${i}]`, s]),
+    ...p.risks.map((s, i) => [`prologue.risks[${i}]`, s]),
+    ...p.impact.map((s, i) => [`prologue.impact[${i}]`, s]),
+    ...p.glossary.map((g, i) => [`prologue.glossary[${i}].description`, g.description]),
+    ...story.chapters.map((c) => [`chapters(id=${c.id}).summary`, c.summary]),
+    ...story.support.map((s, i) => [`support[${i}].reason`, s.reason]),
+  ];
+}
+
+// リンクにならないパスを {path, locations} の形で集める
+function findUnlinkedPaths(story, linkPath) {
+  const unlinked = new Map();
+  for (const [loc, text] of proseFields(story)) {
+    for (const path of findPaths(text)) {
+      if (linkPath(path)) continue;
+      if (!unlinked.has(path)) unlinked.set(path, { path, locations: [] });
+      unlinked.get(path).locations.push(loc);
+    }
+  }
+  return [...unlinked.values()];
 }
 
 function withId(r) {

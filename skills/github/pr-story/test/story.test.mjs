@@ -146,3 +146,15 @@ test('prep.txt は見出しと本文を並べ、preplaced は ID だけ載せる
   assert.match(text, /--- \(app\/new\.rb, 0\) \[added\]/);
   assert.match(text, /lib\/pure_new\.rb ← lib\/pure_old\.rb \[リネームのみ\]/);
 });
+
+test('リンクにならないパスは unlinked_paths の警告にし、失敗にはしない', () => {
+  const story = validStory();
+  story.prologue.impact = ['app/multi.rb と app/missing.rb と lib/exists.rb'];
+  story.chapters[0].title = 'app/title_only.rb';
+  story.chapters[0].summary = 'app/missing.rb を参照';
+  const res = validateStory(story, prepFrom('basic.diff'), { tree: { paths: ['lib/exists.rb'] } });
+  assert.equal(res.ok, true);
+  const w = res.warnings.find((x) => x.code === 'unlinked_paths');
+  assert.deepEqual(w.paths, [{ path: 'app/missing.rb', locations: ['prologue.impact[0]', 'chapters(id=ch1).summary'] }]);
+  assert.ok(!validateStory(validStory(), prepFrom('basic.diff')).warnings.some((x) => x.code === 'unlinked_paths'));
+});

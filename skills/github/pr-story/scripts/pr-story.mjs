@@ -36,7 +36,7 @@ const USAGE = `使い方:
   node pr-story.mjs render --dir <作業ディレクトリ>
   node pr-story.mjs post --dir <作業ディレクトリ>`;
 
-const WORK_FILES = ['prep.json', 'prep.txt', 'previous-story.json', 'story.json', 'story.validated.json', 'comment.md'];
+const WORK_FILES = ['prep.json', 'prep.txt', 'tree.json', 'previous-story.json', 'story.json', 'story.validated.json', 'comment.md'];
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -55,6 +55,29 @@ function requireDir(values) {
 
 function removeIfExists(file) {
   fs.rmSync(file, { force: true });
+}
+
+// ファイル一覧はパスのリンク化にだけ使う。取れなくても PR 解説全体は止めない
+// 取得失敗（なし・読めない・一部だけ）はすべてこの値で表す
+const EMPTY_TREE = { paths: [], truncated: true };
+
+function fetchTree(gh, pr, sha) {
+  try {
+    return gh.listTree(pr, sha);
+  } catch (e) {
+    if (e instanceof CommandError || e instanceof SyntaxError) return EMPTY_TREE;
+    throw e;
+  }
+}
+
+// tree.json がない・読めない場合はツリーが取れなかったものとして扱う
+function readTree(dir) {
+  try {
+    const tree = readJson(path.join(dir, 'tree.json'));
+    return Array.isArray(tree.paths) ? tree : EMPTY_TREE;
+  } catch {
+    return EMPTY_TREE;
+  }
 }
 
 // PR の情報と diff から prep.json の中身を作る
@@ -111,6 +134,7 @@ function cmdPrep(ctx, positionals) {
 
   fs.writeFileSync(path.join(dir, 'prep.json'), toJson(prep));
   fs.writeFileSync(path.join(dir, 'prep.txt'), storyLib.buildPrepText(prep));
+  fs.writeFileSync(path.join(dir, 'tree.json'), toJson(fetchTree(ctx.gh, pr, prep.head)));
   let previousPath = null;
   if (previous) {
     previousPath = path.join(dir, 'previous-story.json');
@@ -147,7 +171,7 @@ function cmdValidate(ctx, values) {
   } catch (e) {
     fail('invalid_json', `story.json を JSON として読めない: ${e.message}`);
   }
-  const res = storyLib.validateStory(story, prep);
+  const res = storyLib.validateStory(story, prep, { tree: readTree(dir) });
   const payload = { ok: res.ok, errors: res.errors, warnings: res.warnings, coverage: res.coverage, output: res.ok ? out : null };
   if (!res.ok) throw new ContentError(`story.json の検証に失敗した（${res.errors.length} 件）`, payload);
   fs.writeFileSync(out, toJson(res.story));
@@ -162,7 +186,7 @@ function cmdRender(ctx, values) {
   if (!fs.existsSync(validated)) throw new UsageError(`${validated} がない。先に validate を成功させること`);
   const prep = readJson(path.join(dir, 'prep.json'));
   try {
-    const { markdown, stats } = renderLib.renderComment(prep, readJson(validated));
+    const { markdown, stats } = renderLib.renderComment(prep, readJson(validated), {}, { tree: readTree(dir) });
     fs.writeFileSync(out, markdown);
     return { ok: true, comment_md: out, ...stats };
   } catch (e) {

@@ -265,3 +265,9 @@ export function hunkUrl(prUrl, h) {
 export function fileUrl(prUrl, path) {
   return `${prUrl}/files#${pathAnchor(path)}`;
 }
+
+// PR に含まれないファイル向け。head SHA で固定した blob URL（パスはセグメント単位でエンコードする）
+export function blobUrl(prUrl, head, path) {
+  const repoUrl = prUrl.replace(/\/pull\/\d+\/?$/, '');
+  return `${repoUrl}/blob/${head}/${path.split('/').map(encodeURIComponent).join('/')}`;
+}

@@ -1,5 +1,6 @@
 import { gunzipSync, gzipSync } from 'node:zlib';
 import { NO_HUNK_LABELS, fileUrl, hunkKey, hunkUrl, indexHunks } from './diff.mjs';
+import { linkPaths, makePathLinker, mapProseLines } from './paths.mjs';
 
 export const MARKER_PREFIX = '<!-- pr-story:v1 ';
 export const DATA_PREFIX = '<!-- pr-story-data:';
@@ -73,28 +74,17 @@ function neutralizeLine(line) {
   return breakMentions(line.replace(/<!--/g, '&lt;!--').replace(/-->/g, '--&gt;'));
 }
 
-// 散文の無害化。コードフェンスの中は触らない
-export function sanitizeProse(text) {
-  let fence = null;
-  return String(text)
-    .split('\n')
-    .map((line) => {
-      const m = line.match(/^\s*(`{3,}|~{3,})/);
-      if (fence) {
-        if (m && m[1][0] === fence[0] && m[1].length >= fence.length) fence = null;
-        return line;
-      }
-      if (m) {
-        fence = m[1];
-        return line;
-      }
-      return neutralizeLine(line);
-    })
-    .join('\n');
+// 散文の無害化。コードフェンスの中は触らない。
+// linkPath（path → url | null）を渡すと、フェンス外の行のパスをリンクにする
+export function sanitizeProse(text, linkPath) {
+  return mapProseLines(text, (line) => {
+    const safe = neutralizeLine(line);
+    return linkPath ? linkPaths(safe, linkPath) : safe;
+  });
 }
 
-function oneLine(s) {
-  return sanitizeProse(String(s).replace(/\s*\n\s*/g, ' ').trim());
+function oneLine(s, linkPath) {
+  return sanitizeProse(String(s).replace(/\s*\n\s*/g, ' ').trim(), linkPath);
 }
 
 export function escapeHtml(s) {
@@ -140,7 +130,11 @@ function minimalData(story) {
   return { chapters: story.chapters.map(({ id, title, hunk_refs }) => ({ id, title, hunk_refs })) };
 }
 
-function build(prep, story, state, limits, index, dataLines) {
+function build(prep, story, state, limits, index, dataLines, linkPath) {
+  // story.mjs の proseFields が走査する散文フィールドと、ここで prose / line（リンク化あり）を使う箇所は対応させる。
+  // 片方を変えたらもう片方も変えること（見出し・用語・図は対象外）
+  const line = (s) => oneLine(s, linkPath);
+  const prose = (s) => sanitizeProse(s, linkPath);
   const lookup = (r) => index.get(hunkKey(r.file_path, r.old_start));
   const p = story.prologue;
   const parts = [];
@@ -148,19 +142,19 @@ function build(prep, story, state, limits, index, dataLines) {
   parts.push(markerLine(prep.head, prep.fingerprint));
   parts.push(`## ${oneLine(p.title)}`);
   parts.push(`> このコメントは変更内容の説明であり、修正依頼ではありません。対象コミット: [${inlineCode(prep.head.slice(0, 7))}](${prep.url}/commits/${prep.head})`);
-  parts.push(sanitizeProse(p.overview));
+  parts.push(prose(p.overview));
 
   parts.push(
     [
       '### なぜ',
       '',
-      `- **課題**: ${oneLine(p.motivation.problem)}`,
-      `- **手段**: ${oneLine(p.motivation.approach)}`,
-      `- **理由**: ${oneLine(p.motivation.rationale)}`,
+      `- **課題**: ${line(p.motivation.problem)}`,
+      `- **手段**: ${line(p.motivation.approach)}`,
+      `- **理由**: ${line(p.motivation.rationale)}`,
     ].join('\n'),
   );
-  parts.push(['### 主な変更', '', ...p.key_changes.map((s) => `- ${oneLine(s)}`)].join('\n'));
-  parts.push(['### 注意して見る点', '', ...p.risks.map((s) => `- ${oneLine(s)}`)].join('\n'));
+  parts.push(['### 主な変更', '', ...p.key_changes.map((s) => `- ${line(s)}`)].join('\n'));
+  parts.push(['### 注意して見る点', '', ...p.risks.map((s) => `- ${line(s)}`)].join('\n'));
 
   const supportCount = story.support.reduce((n, s) => n + s.hunk_refs.length, 0);
   const toc = story.chapters.map((c, i) => `${i + 1}. ${oneLine(c.title)}（${c.hunk_refs.length} hunk）`);
@@ -170,15 +164,15 @@ function build(prep, story, state, limits, index, dataLines) {
   }
   parts.push(['### 章の目次', '', ...toc].join('\n'));
 
-  if (p.impact.length > 0) parts.push(details('影響範囲', p.impact.map((s) => `- ${oneLine(s)}`).join('\n')));
+  if (p.impact.length > 0) parts.push(details('影響範囲', p.impact.map((s) => `- ${line(s)}`).join('\n')));
   if (p.glossary.length > 0) {
-    parts.push(details('用語集', p.glossary.map((g) => `- **${oneLine(g.term)}**: ${oneLine(g.description)}`).join('\n')));
+    parts.push(details('用語集', p.glossary.map((g) => `- **${oneLine(g.term)}**: ${line(g.description)}`).join('\n')));
   }
   if (p.diagram) parts.push(codeBlock('mermaid', p.diagram));
 
   story.chapters.forEach((c, i) => {
     const body = [];
-    if (c.summary) body.push(sanitizeProse(c.summary));
+    if (c.summary) body.push(prose(c.summary));
     if (c.diagram) body.push(codeBlock('mermaid', c.diagram));
     for (const r of c.hunk_refs) {
       const h = lookup(r);
@@ -192,7 +186,7 @@ function build(prep, story, state, limits, index, dataLines) {
   if (supportCount > 0 || noHunk.length > 0) {
     const body = [];
     for (const s of story.support) {
-      body.push(`- ${s.reason ? oneLine(s.reason) : '理由の記載なし'}`);
+      body.push(`- ${s.reason ? line(s.reason) : '理由の記載なし'}`);
       for (const r of s.hunk_refs) {
         const h = lookup(r);
         if (h) body.push(`  - [${hunkLabel(h)}](${hunkUrl(prep.url, h)})`);
@@ -221,7 +215,8 @@ export class RenderSizeError extends Error {
 }
 
 // markdown を組み立て、上限を超える場合は段階的に縮小する
-export function renderComment(prep, story, limitsIn = {}) {
+// tree は { paths, truncated }。paths は head のツリーにあるファイルパスの一覧（PR 外のファイルを blob URL でリンクするのに使う）
+export function renderComment(prep, story, limitsIn = {}, { tree = {} } = {}) {
   const limits = { ...DEFAULT_LIMITS, ...limitsIn };
   const state = { linkOnly: new Set(), data: 'full' };
   const reductions = [];
@@ -229,7 +224,8 @@ export function renderComment(prep, story, limitsIn = {}) {
   // 縮小で作り直しても変わらないものは 1 回だけ計算する
   const index = indexHunks(prep.hunks);
   const dataLines = { full: dataLine(story), minimal: dataLine(minimalData(story)) };
-  const rebuild = () => build(prep, story, state, limits, index, dataLines);
+  const linkPath = makePathLinker(prep, tree);
+  const rebuild = () => build(prep, story, state, limits, index, dataLines, linkPath);
 
   if (measure(dataLines.full) > limits.data) {
     state.data = 'minimal';

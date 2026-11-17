@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { pathAnchor } from '../scripts/lib/diff.mjs';
+import { blobUrl, pathAnchor } from '../scripts/lib/diff.mjs';
 import {
   dataLine,
   extractStoryData,
@@ -11,6 +11,7 @@ import {
   RenderSizeError,
   sanitizeProse,
 } from '../scripts/lib/render.mjs';
+import { findPaths, linkPaths } from '../scripts/lib/paths.mjs';
 import { validateStory } from '../scripts/lib/story.mjs';
 import { prepFrom, validStory } from './helpers.mjs';
 
@@ -160,4 +161,58 @@ test('stats に文字数とバイト数を返す', () => {
   assert.equal(stats.chars, markdown.length);
   assert.equal(stats.bytes, Buffer.byteLength(markdown));
   assert.equal(stats.limit, 60000);
+});
+
+const TREE = ['app/multi.rb', 'app/components/x.rb', 'app/x.rb', 'docs/設計.md'];
+const fileLink = (path) => `https://github.com/octo/demo/pull/7/files#${pathAnchor(path)}`;
+const blobLink = (path) => `https://github.com/octo/demo/blob/${'a'.repeat(40)}/${path}`;
+
+test('散文のパスは PR 内なら Files タブ、PR 外でツリーにあれば blob URL へリンクし、どちらにもなければそのまま', () => {
+  const { prep, story } = setup((s) => {
+    s.prologue.impact = ['app/multi.rb を呼ぶ app/components/x.rb と app/missing.rb'];
+    s.prologue.risks = ['`app/x.rb` の `pre_reservation_acceptable?` と `docs/設計.md`'];
+    s.chapters[0].summary = 'app/new.rbを変える。';
+  });
+  const md = renderComment(prep, story, {}, { tree: { paths: TREE } }).markdown;
+  assert.ok(md.includes(`- [app/multi.rb](${fileLink('app/multi.rb')}) を呼ぶ [app/components/x.rb](${blobLink('app/components/x.rb')}) と app/missing.rb\n`));
+  assert.ok(md.includes(`- [\`app/x.rb\`](${blobLink('app/x.rb')}) の \`pre_reservation_acceptable?\` と [\`docs/設計.md\`](${blobLink('docs/%E8%A8%AD%E8%A8%88.md')})`));
+  assert.ok(md.includes(`[app/new.rb](${fileLink('app/new.rb')})を変える。`), '日本語に続くパスと文末の句点');
+});
+
+test('ツリーがなければ PR 外のパスはリンクにしない', () => {
+  const { prep, story } = setup((s) => {
+    s.prologue.impact = ['app/components/x.rb'];
+  });
+  const md = renderComment(prep, story).markdown;
+  assert.ok(md.includes('- app/components/x.rb\n'));
+});
+
+test('URL、既存のリンク、パスでないコード、コードフェンス内、見出し類のパスは変えない', () => {
+  const urlFor = (p) => `U(${p})`;
+  const line = 'https://example.com/app/x.rb と [app/x.rb](http://e/a) と `user.save` と `a b/c.rb` と lib/a.rb:10 と @scope/pkg/index.js';
+  assert.equal(linkPaths(line, urlFor), line.replace('lib/a.rb', '[lib/a.rb](U(lib/a.rb))'));
+  assert.equal(linkPaths('Gemfile と user.rb と /etc/hosts.conf と v1.2/3.4', urlFor), 'Gemfile と user.rb と /etc/hosts.conf と v1.2/3.4');
+  assert.equal(sanitizeProse('```\napp/x.rb\n```\napp/x.rb', urlFor), '```\napp/x.rb\n```\n[app/x.rb](U(app/x.rb))');
+  assert.equal(sanitizeProse('app/x.rb'), 'app/x.rb', '第 2 引数がなければリンクにしない');
+  assert.equal(sanitizeProse('@scope/pkg/index.js', urlFor), '@\u200bscope/pkg/index.js', 'メンション無害化の後もパッケージ名を拾わない');
+
+  const { prep, story } = setup((s) => {
+    s.prologue.title = 'app/multi.rb の変更';
+    s.chapters[0].title = 'app/multi.rb の整理';
+    s.prologue.glossary = [{ term: 'app/multi.rb', description: '本体は app/multi.rb' }];
+    s.prologue.diagram = 'graph TD\n  A[app/multi.rb] --> B';
+  });
+  const md = renderComment(prep, story, {}, { tree: { paths: TREE } }).markdown;
+  assert.ok(md.includes('## app/multi.rb の変更\n'));
+  assert.ok(md.includes('<summary>第1章 app/multi.rb の整理（3 hunk）</summary>'));
+  assert.ok(md.includes(`- **app/multi.rb**: 本体は [app/multi.rb](${fileLink('app/multi.rb')})`));
+  assert.ok(md.includes('  A[app/multi.rb] --> B'));
+});
+
+test('findPaths はリンク化の対象になるパスだけを重複なく返す', () => {
+  assert.deepEqual(findPaths('app/a.rb と `app/b.rb` と app/a.rb と https://x.test/c/d.rb\n```\napp/e.rb\n```'), ['app/a.rb', 'app/b.rb']);
+});
+
+test('blobUrl はパスをセグメント単位でエンコードする', () => {
+  assert.equal(blobUrl('https://github.com/octo/demo/pull/7', 'abc', 'docs/日本語 #1.md'), 'https://github.com/octo/demo/blob/abc/docs/%E6%97%A5%E6%9C%AC%E8%AA%9E%20%231.md');
 });
