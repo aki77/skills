@@ -11,7 +11,7 @@
 - **「なぜ」は PR 本文、コミット本文、リンクされた issue を根拠にする。** どこにも書かれていなければ捏造せず「記載なし」と書く。
 - **「影響範囲」は周辺コードを Grep で調べて書く。** 確認できた範囲だけを書き、読めなかった範囲は推測で埋めない（書かない）。
 - **前回の story（`previous-story.json`）があれば章構成を保つ。** 章の `id` と `title` を維持し、新規・変更の hunk だけを配置し直す。消えた hunk の参照は取り除く。
-- **`diagram` は mermaid。** 構造の理解に役立つ場合だけ書く。要らなければ空文字にする。
+- **`diagram` は mermaid。** 構造の理解に役立つ場合だけ書く。要らなければ空文字にする。flowchart / graph ではノードのラベルを `A["..."]`、エッジラベルを `-->|"..."|` のように**必ず引用符で囲む**（`/` `:` `(` `=` などを含むラベルは mermaid の字句エラーになる）。`[/` `[\` `[(` などの形状記号は使わない。ラベル内の `"` は使わず言い換える。
 - **出力言語は日本語。**
 - **`@name` や `<!--` を散文に書く必要がなければ避ける。** `@` は無害化され、`<!--` と `-->` はエスケープされるので、書いても壊れはしないが読みにくくなる。
 
@@ -49,7 +49,7 @@
 | `motivation` | 必須。`problem`、`approach`、`rationale` の 3 つとも空でない文字列。根拠がなければ「記載なし」 |
 | `impact` | 任意。文字列の配列 |
 | `glossary` | 任意。`{term, description}` の配列。6 件以上は先頭 5 件に切り詰めて警告 |
-| `diagram` | 任意。文字列 |
+| `diagram` | 任意。文字列。flowchart / graph は引用符なしのラベルに文字・数字・空白・`_ . , -` 以外が入っていると失敗（`unsafe_diagram`） |
 | chapter `id` | `[A-Za-z0-9_-]+` で一意。`overview` と `support` は予約語で使えない |
 | chapter `title` | 必須。48 文字を超えると切り詰められる |
 | chapter `summary` | 任意だが、何が変わったかを書く |
@@ -119,6 +119,7 @@ hunk 見出しの `[status]` は変更の種別（修正、新規、削除など
 | `duplicate_chapter_id` | 章の `id` が重複 | 一意な ID に変える |
 | `invalid_ref` | `hunk_refs` の要素が `{file_path, old_start}` でない、`hunk_refs` が配列でない | `old_start` は 0 以上の整数にする |
 | `invalid_support` | `support` が配列でない、または要素がオブジェクトでない | 形を直す |
+| `unsafe_diagram` | 図（`prologue.diagram` または章の `diagram`）の引用符なしラベルに、mermaid の記号（`/` `:` `(` `=` や `[/` などの形状記号）が入っている | `path` の図の、`labels` に列挙されたラベルを `A["..."]`、`-->|"..."|` のように引用符で囲む。形状記号は使わない |
 | `unknown_refs` | `prep.txt` にない `(file_path, old_start)` を参照している | `refs` に列挙された参照を、`prep.txt` の hunk 見出しの値に合わせる。パスの打ち間違いと、`old_start` に新側の行番号を書いていないかを確認する |
 | `duplicate_refs` | 同じ hunk を複数の箇所に配置している | `refs` の各 `locations` のうち 1 か所だけに残す |
 | `below_floor` | 配置した hunk が半分に満たない | `refs` に列挙された未配置の hunk を章か `support` に入れる。大半が漏れているので、`prep.txt` を最後まで読めているかも確認する |

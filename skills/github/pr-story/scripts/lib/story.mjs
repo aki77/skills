@@ -17,6 +17,30 @@ export function truncateTitle(s) {
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const nonEmptyString = (v) => typeof v === 'string' && v.trim() !== '';
 
+const SAFE_LABEL = /^[\p{L}\p{N}\s_.,-]*$/u;
+// 識別子の直後の開き記号。長いものを先に並べる（[[ [( (( ([ [/ [\ {{ のあとに [ ( { ）
+const NODE_OPEN = /(?<![A-Za-z0-9_])[A-Za-z0-9_]+(\[\[|\[\(|\(\(|\(\[|\[\/|\[\\|\{\{|\[|\(|\{)([^\]\)\}\n]*)/g;
+const EDGE_LABEL = /\|([^|\n]*)\|/g;
+
+// flowchart / graph の、引用符で囲まれていない危険なラベルを返す。
+// mermaid は [/ や ( などをラベル中でも形状記号と解釈して字句エラーになるため
+export function lintDiagram(src) {
+  const lines = String(src ?? '').split('\n').filter((l) => l.trim() !== '' && !l.trim().startsWith('%%'));
+  if (lines.length === 0 || !/^\s*(flowchart|graph)\b/.test(lines[0])) return [];
+  // 引用符付きの文字列は中身を見ない（中の | や括弧を誤検出しない）
+  const body = lines.join('\n').replace(/"[^"\n]*"/g, '""');
+  const bad = [];
+  for (const m of body.matchAll(NODE_OPEN)) {
+    const [, open, content] = m;
+    if (content.startsWith('"')) continue;
+    if (open.length > 1 || !SAFE_LABEL.test(content)) bad.push(open + content);
+  }
+  for (const m of body.matchAll(EDGE_LABEL)) {
+    if (!m[1].startsWith('"') && !SAFE_LABEL.test(m[1])) bad.push(`|${m[1]}|`);
+  }
+  return bad;
+}
+
 function stringList(v) {
   return Array.isArray(v) ? v.filter(nonEmptyString).map((s) => s.trim()) : null;
 }
@@ -93,6 +117,15 @@ export function validateStory(story, prep, { tree = {} } = {}) {
     prologue.glossary = glossary;
   }
 
+  // 図のラベル
+  const checkDiagram = (diagram, path) => {
+    const labels = lintDiagram(diagram);
+    if (labels.length > 0) {
+      err('unsafe_diagram', '図のラベルに mermaid の記号が入っている。ラベルを ["..."] や |"..."| のように引用符で囲む', { path, labels });
+    }
+  };
+  if (p) checkDiagram(prologue.diagram, 'prologue.diagram');
+
   // 参照の収集
   const occurrences = new Map(); // key -> {ref, locations}
   const unknown = new Map();
@@ -157,12 +190,14 @@ export function validateStory(story, prep, { tree = {} } = {}) {
       if (!nonEmptyString(c.title)) err('invalid_chapter', `${where}.title は空でない文字列にする`, { path: `${where}.title` });
       const label = typeof id === 'string' ? `chapters[${i}](id=${id})` : where;
       const refs = normalizeRefs(c.hunk_refs, label);
+      const diagram = typeof c.diagram === 'string' ? c.diagram.trim() : '';
+      checkDiagram(diagram, `${label}.diagram`);
       chapters.push({
         id: typeof id === 'string' ? id : '',
         title: nonEmptyString(c.title) ? truncateTitle(c.title.trim()) : '',
         summary: typeof c.summary === 'string' ? c.summary.trim() : '',
         hunk_refs: refs,
-        diagram: typeof c.diagram === 'string' ? c.diagram.trim() : '',
+        diagram,
       });
     });
   }
