@@ -200,13 +200,13 @@ test('URL、既存のリンク、パスでないコード、コードフェン�
     s.prologue.title = 'app/multi.rb の変更';
     s.chapters[0].title = 'app/multi.rb の整理';
     s.prologue.glossary = [{ term: 'app/multi.rb', description: '本体は app/multi.rb' }];
-    s.prologue.diagram = 'graph TD\n  A[app/multi.rb] --> B';
+    s.prologue.diagram = 'graph TD\n  A["app/multi.rb"] --> B';
   });
   const md = renderComment(prep, story, {}, { tree: { paths: TREE } }).markdown;
   assert.ok(md.includes('## app/multi.rb の変更\n'));
   assert.ok(md.includes('<summary>第1章 app/multi.rb の整理（3 hunk）</summary>'));
   assert.ok(md.includes(`- **app/multi.rb**: 本体は [app/multi.rb](${fileLink('app/multi.rb')})`));
-  assert.ok(md.includes('  A[app/multi.rb] --> B'));
+  assert.ok(md.includes('  A["app/multi.rb"] --> B'));
 });
 
 test('findPaths はリンク化の対象になるパスだけを重複なく返す', () => {

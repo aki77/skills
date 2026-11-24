@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildPrepText, REASON_AUTO_FILLED, REASON_PREPLACED, truncateTitle, validateStory } from '../scripts/lib/story.mjs';
+import { buildPrepText, lintDiagram, REASON_AUTO_FILLED, REASON_PREPLACED, truncateTitle, validateStory } from '../scripts/lib/story.mjs';
 import { prepFrom, validStory } from './helpers.mjs';
 
 const codes = (res) => res.errors.map((e) => e.code);
@@ -157,4 +157,46 @@ test('リンクにならないパスは unlinked_paths の警告にし、失敗�
   const w = res.warnings.find((x) => x.code === 'unlinked_paths');
   assert.deepEqual(w.paths, [{ path: 'app/missing.rb', locations: ['prologue.impact[0]', 'chapters(id=ch1).summary'] }]);
   assert.ok(!validateStory(validStory(), prepFrom('basic.diff')).warnings.some((x) => x.code === 'unlinked_paths'));
+});
+
+const REAL_DIAGRAM = `flowchart LR
+  A[PR opened / synchronize / ready_for_review] --> G[generate: 読み取り専用]
+  B[/story コメント] --> G
+  G -->|generated == true| P[publish: pull-requests write]
+  P --> C[sticky コメント]`;
+
+test('lintDiagram: 引用符なしの危険なラベルを検出する', () => {
+  const bad = lintDiagram(REAL_DIAGRAM);
+  assert.ok(bad.includes('[/story コメント'), JSON.stringify(bad));
+  assert.ok(bad.includes('|generated == true|'), JSON.stringify(bad));
+  assert.ok(bad.some((l) => l.includes('generate: ')));
+  assert.ok(!bad.some((l) => l.includes('sticky')));
+});
+
+test('lintDiagram: 引用符付き・安全なラベル・flowchart 以外は空配列', () => {
+  const quoted = `flowchart LR
+  A["PR opened / synchronize"] --> G["generate: 読み取り専用"]
+  B["/story コメント"] --> G
+  G -->|"generated == true"| P["publish: pull-requests write"]
+  P --> C["sticky コメント"]`;
+  assert.deepEqual(lintDiagram(quoted), []);
+  assert.deepEqual(lintDiagram('graph TD\n  A[Foo] --> B[日本語ラベル]\n  B -->|yes| C{ok_1.2}'), []);
+  assert.deepEqual(lintDiagram('%% c\n\nsequenceDiagram\n  A->>B: hello (x) / y'), []);
+  assert.deepEqual(lintDiagram(''), []);
+});
+
+test('unsafe_diagram: prologue と章の危険な図を path 付きで失敗にし、安全な図は通る', () => {
+  const story = validStory();
+  story.prologue.diagram = REAL_DIAGRAM;
+  story.chapters[1].diagram = 'flowchart LR\n  A[/x] --> B';
+  const res = validateStory(story, prepFrom('basic.diff'));
+  assert.equal(res.ok, false);
+  const paths = res.errors.filter((e) => e.code === 'unsafe_diagram').map((e) => e.path);
+  assert.deepEqual(paths, ['prologue.diagram', 'chapters[1](id=ch2).diagram']);
+  assert.ok(res.errors[0].labels.length > 0);
+
+  story.prologue.diagram = 'flowchart LR\n  A["a / b"] --> B[日本語]';
+  story.chapters[1].diagram = '';
+  const ok = validateStory(story, prepFrom('basic.diff'));
+  assert.equal(ok.ok, true, JSON.stringify(ok.errors));
 });
